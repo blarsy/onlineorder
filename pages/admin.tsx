@@ -15,7 +15,7 @@ const Admin: NextPage = () => {
     const [error, setError] = useState('')
     const [connectionData, setConnectionData] = useState({
         walletAddress: '',
-        signer: null
+        signer: null as ethers.providers.JsonRpcSigner | null
     } as ConnectionData)
     const tryConnect = async () => {
         if(window.ethereum) {
@@ -36,8 +36,8 @@ const Admin: NextPage = () => {
         }
     }
     return (
-        <Box display='flex' flexDirection='column' alignItems='center' justifyContent='space-between' flexGrow='1'>
-            { !connectionData.walletAddress && <Button variant="contained" onClick={tryConnect}>Connect</Button>}
+        <Box display='flex' flexDirection='column' justifyContent='space-between' flexGrow='1'>
+            { !connectionData.walletAddress && <Button variant="contained" sx={{ alignSelf: 'center' }} onClick={tryConnect}>Connect</Button>}
             {error && <Alert variant="filled" severity="error">{error}</Alert>}
             { connectionData.walletAddress &&  <ControlPanel connectionData={connectionData}/>}
         </Box>
