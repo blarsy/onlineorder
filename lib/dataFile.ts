@@ -1,47 +1,14 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
-import creds from '../google-creds.json'
 import { Readable } from 'stream'
-import { GoogleAuth } from 'google-auth-library'
-import { google, drive_v3 } from 'googleapis'
+import { drive_v3 } from 'googleapis'
 import { ProductData, CustomerData, SalesCycle } from './common'
+import { getWorkingFolder, connectSpreadsheet, connectDrive } from './google'
 
 
 const googleSheetIdProducts = process.env.GOOGLE_SHEET_ID_PRODUCTS!
 const googleSheetIdCustomers = process.env.GOOGLE_SHEET_ID_CUSTOMERS!
 const workingFileName = process.env.WORKING_FILE_NAME!
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
-
-const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
-    const doc = new GoogleSpreadsheet(sheetId)
-    await doc.useServiceAccountAuth(creds)
-
-
-    await doc.loadInfo()
-    return doc
-}
-
-const connectDrive = async (): Promise<drive_v3.Drive> => {
-
-  const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/drive',
-    credentials: creds
-  })
-
-  return google.drive({version: 'v3', auth})
-}
-
-const getWorkingFolder = async (service: drive_v3.Drive, folderName: string): Promise<drive_v3.Schema$File> => {
-  const res = await service.files.list({
-    q: `name = '${folderName}' and mimeType='application/vnd.google-apps.folder'`,
-    fields: 'files(id, name)',
-    spaces: 'drive',
-  })
-  if (res.data?.files?.length === 1) {
-    return res.data.files[0]
-  } else {
-    throw new Error(`Remote working folder ${folderName} not found`)
-  }
-}
 
 async function createRemoteDataFile(service: drive_v3.Drive, fileContent: SalesCycle, fileName: string) : Promise<drive_v3.Schema$File>{
   const parentFolder = await getWorkingFolder(service, workingFolderName)
@@ -120,7 +87,7 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
     return customers
 }
 
-export const createDataFile = async (weekNumber: number): Promise<drive_v3.Schema$File> => {
+export const createDataFile = async (weekNumber: number, year: number): Promise<drive_v3.Schema$File> => {
     const docProducts = await connectSpreadsheet(googleSheetIdProducts)
     const docCustomers = await connectSpreadsheet(googleSheetIdCustomers)
 
@@ -128,7 +95,7 @@ export const createDataFile = async (weekNumber: number): Promise<drive_v3.Schem
     const customers = await getCustomerData(docCustomers)
 
     const service = await connectDrive()
-    return await createRemoteDataFile(service, {products, customers, weekNumber}, workingFileName)
+    return await createRemoteDataFile(service, {products, customers, targetWeek: { weekNumber, year }, creationDate: new Date()}, workingFileName)
 }
 
 const getDataFile = async(service: drive_v3.Drive): Promise<drive_v3.Schema$File | null> => {

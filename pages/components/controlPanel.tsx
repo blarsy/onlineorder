@@ -5,25 +5,23 @@ import { JSONTree } from 'react-json-tree'
 import Loader from './loader'
 import axios from 'axios'
 import {
-    ErrorMessage,
     Formik,
     FormikHelpers,
-    FormikProps,
     Form,
-    Field,
-    FieldProps,
   } from 'formik'
 import * as yup from 'yup'
 import { ConnectionData } from '../../lib/common'
-import { isCurrentOrNextWeekNumber } from '../../lib/common'
+import { isCurrentOrNextWeekNumber, getWeek } from '../../lib/dateWeek'
 import Submit from './form/submit'
+import './form/common'
 
 interface Props {
     connectionData: ConnectionData
 }
 
 interface Values {
-    weekNumber: number
+    weekNumber: number,
+    year: number
 }
 
 yup.setLocale({
@@ -45,40 +43,51 @@ const ControlPanel = ({connectionData}: Props) => {
         <Chip label={'Connected : ' + connectionData.walletAddress.substring(0, 15) + '...'} color="success"/>
         <Formik
             initialValues={{
-                weekNumber: new Date().getWeek(),
+                weekNumber: getWeek(new Date()),
+                year: new Date().getFullYear()
             }}
-        validationSchema={ yup.object({
-            weekNumber: yup.number().required().test((val, ctx) => {
-                if(val) {
-                    if(!isCurrentOrNextWeekNumber(val)) {
-                        return ctx.createError({ message: 'Le numéro de semaine doit être celui de la semaine actuelle ou de celle d\'après'})
+            validationSchema={ yup.object({
+                weekNumber: yup.number().required().test((val, ctx) => {
+                    if(val) {
+                        if(!isCurrentOrNextWeekNumber(val)) {
+                            return ctx.createError({ message: 'Le numéro de semaine doit être celui de la semaine actuelle ou de celle d\'après'})
+                        }
                     }
+                    return true
+                }),
+                year: yup.number().required().test((val, ctx) => {
+                    if(val) {
+                        const currentYear = new Date().getFullYear()
+                        if(val != currentYear && val != currentYear +1) {
+                            return ctx.createError({ message: 'L\'année doit être l\'actuelle ou de celle d\'après'})
+                        }
+                    }
+                    return true
+                })
+            }) }
+            onSubmit={async (
+                values: Values
+            ) => {
+                try {
+                    const message = new Date().toUTCString()
+                    const signature = await connectionData.signer?.signMessage(message)
+                    await axios.put('/api/orderweek', { message, signature, weekNumber: values.weekNumber, year: values.year })
+                    setCreationError('')
+                } catch (e) {
+                    setCreationError((e as Error).toString())
                 }
-                return true
-             })
-        }) }
-        onSubmit={async (
-          values: Values,
-          { setSubmitting }: FormikHelpers<Values>
-        ) => {
-            try {
-                const message = new Date().toUTCString()
-                const signature = await connectionData.signer?.signMessage(message)
-                await axios.put('/api/orderweek', { message, signature, weekNumber: values.weekNumber })
-                setCreationError('')
-            } catch (e) {
-                setCreationError((e as Error).toString())
-            } finally {
-                setSubmitting(false)
-            }
-        }}
-      >
+            }}
+        >
         {({ isSubmitting, getFieldProps, errors, touched }) => (
         <Stack component={Form} gap="1rem">
             <TextField size="small" label="Numéro de semaine" 
                 id="weekNumber" error={touched.weekNumber && !!errors.weekNumber}
                 helperText={errors.weekNumber}
                 {...getFieldProps('weekNumber')}></TextField>
+            <TextField size="small" label="Année" 
+                id="year" error={touched.year && !!errors.year}
+                helperText={errors.year}
+                {...getFieldProps('year')}></TextField>
 
             <Submit isSubmitting={isSubmitting} label="Generate new source file" submitError={creationError}/>
         </Stack>)}

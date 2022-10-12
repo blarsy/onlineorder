@@ -2,7 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { utils } from 'ethers'
 import { createDataFile, getDataFileContent } from '../../lib/dataFile'
-import { isCurrentOrNextWeekNumber } from '../../lib/common'
+import { isCurrentOrNextWeekNumber } from '../../lib/dateWeek'
 
 type Data = {
   error: string
@@ -23,7 +23,7 @@ export default async function handler(
                 if(!req.body.weekNumber || !isCurrentOrNextWeekNumber(req.body.weekNumber)){
                     res.status(500).json({ error: 'Invalid or missing weekNumber' })
                 } else {
-                    await createDataFile(req.body.weekNumber)
+                    await createDataFile(req.body.weekNumber, req.body.year)
                     res.status(200).json({ error: '' })
                 }
             }

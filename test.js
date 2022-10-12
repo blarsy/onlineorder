@@ -92,8 +92,29 @@ Date.prototype.getWeekBounds = function() {
   return [beginWeek, todayMidnight.addDays(i).toLocaleDateString('fr-BE')]
 }
 
+const getDateOfISOWeek = (w, y) => {
+  var simple = new Date(y, 0, 1 + (w - 1) * 7);
+  var dow = simple.getDay();
+  var ISOweekStart = simple;
+  if (dow <= 4)
+      ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+  else
+      ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+  return ISOweekStart;
+}
+
 const main = async () => {
-    console.log(new Date(2022,9,10,0,0,0,0).getWeekBounds())
+  const weeks= [
+    [51,2019],
+    [52,2019],
+    [53,2019],
+    [1,2020],
+    [2,2020],
+    [3,2020],
+  ]
+  for(i = 0; i<weeks.length; i++) {
+    console.log(`${weeks[i][0]} : ${getDateOfISOWeek(weeks[i][0], weeks[i][1])}`)
+  }
 }
 
 main().then(() => console.log('done'))
