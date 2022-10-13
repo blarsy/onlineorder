@@ -1,11 +1,17 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { CustomerData, DeliveryTimes, OrderData, OrderStatus, SalesCycle } from '../lib/common'
+import { CustomerData, DeliveryTimes, OrderData, OrderStatus } from '../lib/common'
 import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
 import EditOrder from './components/editOrder'
 import Loader from './components/loader'
-import { addDays, getDateOfISOWeek, getWeekBounds } from '../lib/dateWeek'
+import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
+
+const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
+    // dates come as ISO strings from Api, but we want them typed as Dates
+    orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
+    return orderFromApi
+}
 
 const Order = () => {
     const router = useRouter()
@@ -30,8 +36,8 @@ const Order = () => {
                     if(res.status != 200) {
                         setSalesCycleState({ loading: false, error: `Erreur pendant le chargement de la commande : ${res.statusText}`, enrichedSalesCycle: null, customer: null})
                     } else {
-                        if(!res.data) {
-                            customer.order = res.data
+                        if(res.data) {
+                            customer.order = orderFromApiCallResult(res.data)
                         } else {
                             customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.targetWeek.weekNumber, enrichedSalesCycle.salesCycle.targetWeek.year)
                         }
@@ -65,10 +71,10 @@ function createOrderWithDefaults(weekNumber: number, year: number): OrderData {
         status: OrderStatus.draft,
         preferredDeliveryTimes: [{
             day: thursdayOfTargetWeek,
-            times: [DeliveryTimes.h13, DeliveryTimes.h14, DeliveryTimes.h15]
+            times: [{deliveryTime: DeliveryTimes.h13, checked:false}, {deliveryTime: DeliveryTimes.h14, checked:false}, {deliveryTime: DeliveryTimes.h15, checked:false}]
         }, {
             day: fridayOfTargetWeek,
-            times: [DeliveryTimes.h8, DeliveryTimes.h9, DeliveryTimes.h10, DeliveryTimes.h11, DeliveryTimes.h12] 
+            times: [{deliveryTime: DeliveryTimes.h8, checked:false}, {deliveryTime: DeliveryTimes.h9, checked:false}, {deliveryTime: DeliveryTimes.h10, checked:false}, {deliveryTime: DeliveryTimes.h11, checked:false}, {deliveryTime: DeliveryTimes.h12, checked:false}] 
         }],
         quantities: [],
         note: ''

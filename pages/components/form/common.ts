@@ -1,5 +1,5 @@
 import { setLocale } from 'yup'
-import { CustomerData } from '../../../lib/common'
+import { CustomerData, DeliveryTimes } from '../../../lib/common'
 import { EnrichedSalesCycle } from '../../../lib/salesCycleCache'
 setLocale({
     mixed: {
@@ -18,3 +18,9 @@ setLocale({
     next?: () => void
     prev?: () => void
 }
+
+export interface OrderPrefs {
+  [preferredDeliveryTimeId: string]: boolean,
+}
+
+export const makePrefCtrlId = (day: Date, deliveryTime: DeliveryTimes) => `${day.toLocaleDateString('fr-BE')}-${deliveryTime.toString()}`

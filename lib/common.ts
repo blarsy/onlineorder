@@ -43,7 +43,10 @@ export interface OrderData {
     }[],
     preferredDeliveryTimes: {
         day: Date,
-        times: DeliveryTimes[]
+        times: {
+            deliveryTime: DeliveryTimes,
+            checked: boolean
+        }[]
     }[],
     note: string
 }

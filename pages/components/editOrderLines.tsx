@@ -6,6 +6,7 @@ import {
   } from 'formik'
 import { useState } from "react"
 import * as yup from 'yup'
+import { constants } from "zlib"
 import { OrderData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
 import { OrderStepProps } from "./form/common"
@@ -21,7 +22,8 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next }: OrderStepProps) 
         validationSchema={ yup.object(getValidationSchema(enrichedSalesCycle)) }
         onSubmit={async (values) => {
             try {
-                const order = {} as OrderData
+                const order = customer.order || {} as OrderData
+                order.quantities = []
                 Object.keys(values).forEach(ctrlId => {
                     if(values[ctrlId] != 0) {
                         const orderedProduct = enrichedSalesCycle.productsByCtrlId[ctrlId]
@@ -32,11 +34,8 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next }: OrderStepProps) 
                             category: orderedProduct.category,
                             unit: orderedProduct.unit
                         }
-                        if(!order.quantities) {
-                            order.quantities = [quantityBeingAdded]
-                        } else {
-                            order.quantities.push(quantityBeingAdded)
-                        }
+ 
+                        order.quantities.push(quantityBeingAdded)
                     }
                 })
                 const res = await axios.put('/api/order', {
@@ -106,7 +105,7 @@ function getInitialValues(enrichedSalesCycle: EnrichedSalesCycle, order: OrderDa
     return result
 }
 function getValidationSchema(enrichedSalesCycle: EnrichedSalesCycle):any  {
-    let result = {} as any
+    const result = {} as any
     Object.keys(enrichedSalesCycle.productsByCategory).map((category) => {
         enrichedSalesCycle.productsByCategory[category].map((productRec) => {
             result[productRec.ctrlId] = yup.number().max(productRec.product.quantity).min(0)
