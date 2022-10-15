@@ -15,6 +15,14 @@ export interface ProductData {
     quantityPerBigCrate?: number
 }
 
+export interface NonLocalProductData {
+    name: string, 
+    category: string,
+    price: number, 
+    unit: string,
+    packaging: number
+}
+
 export enum OrderStatus {
     draft = 'Draft',
     confirmed = 'Confirmed'
@@ -41,6 +49,14 @@ export interface OrderData {
         category: string,
         price: number
     }[],
+    quantitiesNonLocal: {
+        quantity: number,
+        productName: string,
+        unit: string,
+        category: string,
+        price: number,
+        packaging: number
+    }[],
     preferredDeliveryTimes: {
         day: Date,
         times: {
@@ -48,7 +64,8 @@ export interface OrderData {
             checked: boolean
         }[]
     }[],
-    note: string
+    note: string,
+    confirmationDateTime?: Date
 }
 
 export interface CustomerData {
@@ -62,10 +79,12 @@ export interface CustomerData {
 
 export interface SalesCycle {
     products: ProductData[],
+    nonLocalProducts: NonLocalProductData[],
     customers: CustomerData[],
     targetWeek: {
         weekNumber: number,
         year: number
     },
-    creationDate: Date
+    creationDate: Date,
+    deadline: Date
 }

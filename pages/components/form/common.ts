@@ -17,6 +17,7 @@ setLocale({
     customer: CustomerData,
     next?: () => void,
     prev?: () => void,
+    mutateCustomer?: (customer: CustomerData) => void,
     save: ( customer: CustomerData, targetWeek: {
       weekNumber: number,
       year: number

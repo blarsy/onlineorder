@@ -8,7 +8,7 @@ interface Props {
 }
 const CustomerHeader = ({ customer, salesCycle } : Props) => {
     const weekBounds = getWeekBounds(getDateOfISOWeek(salesCycle.targetWeek.weekNumber, salesCycle.targetWeek.year))
-    return <Stack direction="row">
+    return <Stack direction="row" alignSelf="center">
         <Box sx={{width: '5rem', height:'5rem'}}><img src='/Logo-header.png' width="100%" height="100%"/></Box>
         <Box>
             <Typography variant="h4" align="center">{customer.customerName}</Typography>

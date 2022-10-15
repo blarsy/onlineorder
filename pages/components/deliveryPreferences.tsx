@@ -24,7 +24,7 @@ const displayDeliveryDayPrefs = (deliveryDate:{
 const DeliveryPreferences = ({ order }: Props) => {
     return <Box>
         <Typography>Préférences livraison :
-            { order.preferredDeliveryTimes.map(deliveryDay => <span>{displayDeliveryDayPrefs(deliveryDay)}</span>)}
+            { order.preferredDeliveryTimes.map(deliveryDay => <span key={deliveryDay.day.valueOf()}>{displayDeliveryDayPrefs(deliveryDay)}</span>)}
         </Typography>
     </Box>
 }

@@ -22,8 +22,10 @@ export default async function handler(
             } else {
                 if(!req.body.weekNumber || !isCurrentOrNextWeekNumber(req.body.weekNumber)){
                     res.status(500).json({ error: 'Invalid or missing weekNumber' })
+                } else if (!req.body.deadline){
+                    res.status(500).json({ error: 'missing deadline' })
                 } else {
-                    await createDataFile(req.body.weekNumber, req.body.year)
+                    await createDataFile(req.body.weekNumber, req.body.year, new Date(req.body.deadline))
                     res.status(200).json({ error: '' })
                 }
             }

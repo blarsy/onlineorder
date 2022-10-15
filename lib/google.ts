@@ -8,7 +8,6 @@ export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreads
     const doc = new GoogleSpreadsheet(sheetId)
     await doc.useServiceAccountAuth(creds)
 
-
     await doc.loadInfo()
     return doc
 }

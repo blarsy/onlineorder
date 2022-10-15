@@ -1,15 +1,14 @@
 import { Box, Typography, Stack } from "@mui/material"
-import axios from "axios"
 import {
     Form,
     Formik,
   } from 'formik'
 import { useState } from "react"
 import * as yup from 'yup'
-import { constants } from "zlib"
 import { OrderData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
 import { OrderStepProps } from "./form/common"
+import NonLocalProductsOrderTable from "./form/nonLocalProductsOrderTable"
 import ProductsOrderTable from "./form/productsOrderTable"
 import Submit from "./form/submit"
 import OrderSummary from "./orderSummary"
@@ -24,18 +23,33 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
             try {
                 const order = customer.order || {} as OrderData
                 order.quantities = []
+                order.quantitiesNonLocal = []
                 Object.keys(values).forEach(ctrlId => {
                     if(values[ctrlId] != 0) {
-                        const orderedProduct = enrichedSalesCycle.productsByCtrlId[ctrlId]
-                        const quantityBeingAdded = {
-                            productName: orderedProduct.name,
-                            quantity: Number(values[ctrlId]),
-                            price: orderedProduct.price,
-                            category: orderedProduct.category,
-                            unit: orderedProduct.unit
+                        if(ctrlId.startsWith('nl')){
+                            const orderedProduct = enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId]
+                            const quantityBeingAdded = {
+                                productName: orderedProduct.name,
+                                quantity: Number(values[ctrlId]),
+                                price: orderedProduct.price,
+                                category: orderedProduct.category,
+                                unit: orderedProduct.unit,
+                                packaging: orderedProduct.packaging
+                            }
+     
+                            order.quantitiesNonLocal.push(quantityBeingAdded)
+                        } else {
+                            const orderedProduct = enrichedSalesCycle.productsByCtrlId[ctrlId]
+                            const quantityBeingAdded = {
+                                productName: orderedProduct.name,
+                                quantity: Number(values[ctrlId]),
+                                price: orderedProduct.price,
+                                category: orderedProduct.category,
+                                unit: orderedProduct.unit
+                            }
+     
+                            order.quantities.push(quantityBeingAdded)
                         }
- 
-                        order.quantities.push(quantityBeingAdded)
                     }
                 })
                 const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
@@ -52,7 +66,13 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
         let totalHtva = 0
         Object.keys(values).forEach(ctrlId => {
             if(Number(values[ctrlId]) != 0) {
-                totalHtva += enrichedSalesCycle.productsByCtrlId[ctrlId].price * Number(values[ctrlId])
+                if(ctrlId.startsWith('nl')) {
+                    totalHtva += enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId].price * 
+                        Number(values[ctrlId]) * 
+                        Number(enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId].packaging)
+                } else {
+                    totalHtva += enrichedSalesCycle.productsByCtrlId[ctrlId].price * Number(values[ctrlId])
+                }
             }
         })
         return (<Box component={Form} alignSelf="center" display="flex" flexDirection="column" gap="1rem">
@@ -68,6 +88,19 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
                 </Box>
             })
             }
+            { Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category, catIdx)=> {
+                return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
+                    <Typography variant="h5">{category} - Origine hors coopérative (bio non-local)</Typography>
+                    <NonLocalProductsOrderTable 
+                        products={enrichedSalesCycle.nonLocalProductsByCategory[category]}
+                        touched={touched}
+                        errors={errors}
+                        getFieldProps={getFieldProps}
+                        values={values}/>
+                </Box>
+            })
+            }
+
             <OrderSummary totalHtva={totalHtva}/>
             <Stack alignItems="center">
                 {Object.keys(errors).length > 0 && <Typography variant="overline" color="error.main">Il y a des erreurs dans les quantités entrées. Veuillez les corriger avant de pouvoir valider la commande.</Typography>}
@@ -97,6 +130,24 @@ function getInitialValues(enrichedSalesCycle: EnrichedSalesCycle, order: OrderDa
             })
         }
     })
+
+    Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category) => {
+        if (order) {
+            enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
+                const relevantQuantity = order.quantitiesNonLocal.find(
+                    quantity => quantity.productName == productRec.product.name && 
+                    quantity.category == productRec.product.category &&
+                    quantity.price == productRec.product.price &&
+                    quantity.packaging == productRec.product.packaging)
+                result[productRec.ctrlId] = relevantQuantity?.quantity || 0
+            })
+        } else {
+            enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
+                result[productRec.ctrlId] = 0
+            })
+        }
+    })
+
     return result
 }
 function getValidationSchema(enrichedSalesCycle: EnrichedSalesCycle):any  {
@@ -104,6 +155,11 @@ function getValidationSchema(enrichedSalesCycle: EnrichedSalesCycle):any  {
     Object.keys(enrichedSalesCycle.productsByCategory).map((category) => {
         enrichedSalesCycle.productsByCategory[category].map((productRec) => {
             result[productRec.ctrlId] = yup.number().max(productRec.product.quantity).min(0)
+        })
+    })
+    Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category) => {
+        enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
+            result[productRec.ctrlId] = yup.number().min(0)
         })
     })
     return result

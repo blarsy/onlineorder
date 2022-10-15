@@ -1,5 +1,5 @@
 import { drive_v3 } from "googleapis";
-import { CustomerData, OrderData } from "./common";
+import { CustomerData, OrderData, OrderStatus } from "./common";
 import { connectDrive, createOrReplaceFile, getOrCreateFolder, getWorkingFolder, getFileContent, getFileId } from "./google"
 
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
@@ -10,6 +10,11 @@ export const saveOrder = async (order : OrderData, slug: string, weekNumber: num
     const service = await connectDrive()
     const workingFolder = await getWorkingFolder(service, workingFolderName)
     const weekFolder = await getOrCreateFolder(service, weekFileName(weekNumber, year), workingFolder.id!)
+
+    if(order && order.status === OrderStatus.confirmed && !order.confirmationDateTime) {
+        order.confirmationDateTime = new Date()
+    }
+
     await createOrReplaceFile(service, slug, weekFolder.id!, order!)
 }
 

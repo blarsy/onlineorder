@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Stack, Typography, Button, TextField, Box } from "@mui/material"
+import { Stack, Typography, Button, TextField } from "@mui/material"
 import {
     Form,
     Formik,
@@ -11,12 +11,14 @@ import OrderLinesSummary from "./orderLinesSummary"
 import OrderSummary from "./orderSummary"
 import DeliveryPreferences from './deliveryPreferences'
 
-const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save }: OrderStepProps) => {
+const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCustomer }: OrderStepProps) => {
     const [confirmError, setConfirmError] = useState('')
-    const totalHtva = customer.order!.quantities.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity), 0)
+    const totalProductsHtva = customer.order!.quantities.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity), 0)
+    const totalNonLocalProductsHtva  = customer.order!.quantitiesNonLocal.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity) * Number(quantity.packaging), 0)
+    const totalHtva = totalProductsHtva + totalNonLocalProductsHtva
     return <Stack alignSelf="stretch" alignItems="stretch" spacing={1}>
         <Button onClick={prev}>Etape précédente</Button>
-        <Typography variant="h6">Passez votre commande en revue</Typography>
+        <Typography variant="h5">Passez votre commande en revue</Typography>
         <OrderLinesSummary order={customer.order!} />
         <OrderSummary totalHtva={totalHtva} />
         <DeliveryPreferences order={customer.order!} />
@@ -29,6 +31,7 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save }: OrderStep
                     customer.order!.status = OrderStatus.draft
                     setConfirmError(error)
                 }
+                mutateCustomer!(customer)
             } catch(e) {
                 customer.order!.status = OrderStatus.draft
                 setConfirmError((e as Error).toString())

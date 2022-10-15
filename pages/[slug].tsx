@@ -6,7 +6,7 @@ import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
 import EditOrder from './components/editOrder'
 import Loader from './components/loader'
 import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
-import { Box, Stack, Alert } from '@mui/material'
+import { Stack, Alert } from '@mui/material'
 import CustomerHeader from './components/customerHeader'
 
 const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
@@ -57,15 +57,19 @@ const Order = () => {
 
     let content = {} as JSX.Element
     if(salesCycleState.customer) {
-        if (salesCycleState.customer.order?.status === OrderStatus.draft) {
-            content = <EditOrder 
-            enrichedSalesCycle={salesCycleState.enrichedSalesCycle!}
-            customer={salesCycleState.customer!}/>
-        } else if (salesCycleState.customer.order?.status === OrderStatus.confirmed) {
+        if (salesCycleState.customer.order?.status === OrderStatus.confirmed) {
             content = <Alert severity="success">Commande enregistrée ! Merci et à bientôt pour la livraison.</Alert>
+        } else if (salesCycleState.enrichedSalesCycle && salesCycleState.enrichedSalesCycle.salesCycle.deadline < new Date()) {
+            content = <Alert severity="error">Désolé, la période de commande est terminée depuis le {salesCycleState.enrichedSalesCycle.salesCycle.deadline.toLocaleDateString()} {salesCycleState.enrichedSalesCycle.salesCycle.deadline.toLocaleTimeString()}.</Alert>
+        } else if (salesCycleState.customer.order?.status === OrderStatus.draft) {
+            content = <EditOrder 
+                enrichedSalesCycle={salesCycleState.enrichedSalesCycle!}
+                customer={salesCycleState.customer!}
+                mutateCustomer={(customer: CustomerData) => setSalesCycleState({...salesCycleState, ...{customer }})}/>
         }
+
         if(salesCycleState.enrichedSalesCycle && salesCycleState.enrichedSalesCycle.salesCycle){
-            content = <Stack alignItems="center">
+            content = <Stack alignItems="stretch">
                 <CustomerHeader customer={salesCycleState.customer!} salesCycle={salesCycleState.enrichedSalesCycle!.salesCycle}/>
                 { content }
             </Stack>
@@ -83,8 +87,8 @@ export default Order
 
 function createOrderWithDefaults(weekNumber: number, year: number): OrderData {
     const mondayOfTargetWeek = getDateOfISOWeek(weekNumber, year)
-    const thursdayOfTargetWeek = addDays(mondayOfTargetWeek, 4)
-    const fridayOfTargetWeek = addDays(mondayOfTargetWeek, 5)
+    const thursdayOfTargetWeek = addDays(mondayOfTargetWeek, 3)
+    const fridayOfTargetWeek = addDays(mondayOfTargetWeek, 4)
 
     return {
         status: OrderStatus.draft,
@@ -96,6 +100,7 @@ function createOrderWithDefaults(weekNumber: number, year: number): OrderData {
             times: [{deliveryTime: DeliveryTimes.h8, checked:false}, {deliveryTime: DeliveryTimes.h9, checked:false}, {deliveryTime: DeliveryTimes.h10, checked:false}, {deliveryTime: DeliveryTimes.h11, checked:false}, {deliveryTime: DeliveryTimes.h12, checked:false}] 
         }],
         quantities: [],
+        quantitiesNonLocal: [],
         note: ''
     }
 }

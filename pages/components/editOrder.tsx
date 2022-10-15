@@ -11,9 +11,10 @@ import axios from "axios"
 interface Props {
     customer: CustomerData,
     enrichedSalesCycle: EnrichedSalesCycle,
+    mutateCustomer: (customer: CustomerData) => void
 }
 
-const EditOrder = ({customer, enrichedSalesCycle} : Props) => {
+const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer} : Props) => {
     const [step, setStep] = useState(0)
     const next = () => { setStep(step + 1) }
     const prev = () => { setStep(step - 1) }
@@ -37,7 +38,7 @@ const EditOrder = ({customer, enrichedSalesCycle} : Props) => {
     return <Stack alignItems="center" direction="column" justifyContent="flex-begin">
         { step === 0 && <EditOrderLines enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next}/>}
         { step === 1 && <EditPreferences enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next} prev={prev} />}
-        { step === 2 && <ReviewSendOrder enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} prev={prev} />}
+        { step === 2 && <ReviewSendOrder enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} prev={prev} mutateCustomer={mutateCustomer} />}
     </Stack>
 }
 
