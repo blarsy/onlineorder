@@ -1,8 +1,47 @@
-import { Box } from "@mui/material"
+import { useState } from 'react'
+import { Stack, Typography, Button, TextField, Box } from "@mui/material"
+import {
+    Form,
+    Formik,
+  } from 'formik'
+import { OrderStatus } from "../../lib/common"
 import { OrderStepProps } from "./form/common"
+import Submit from "./form/submit"
+import OrderLinesSummary from "./orderLinesSummary"
+import OrderSummary from "./orderSummary"
+import DeliveryPreferences from './deliveryPreferences'
 
-const ReviewSendOrder = ({ enrichedSalesCycle, customer }: OrderStepProps) => {
-    return <Box>Review</Box>
+const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save }: OrderStepProps) => {
+    const [confirmError, setConfirmError] = useState('')
+    const totalHtva = customer.order!.quantities.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity), 0)
+    return <Stack alignSelf="stretch" alignItems="stretch" spacing={1}>
+        <Button onClick={prev}>Etape précédente</Button>
+        <Typography variant="h6">Passez votre commande en revue</Typography>
+        <OrderLinesSummary order={customer.order!} />
+        <OrderSummary totalHtva={totalHtva} />
+        <DeliveryPreferences order={customer.order!} />
+        <Formik initialValues={{ note: customer.order!.note }} onSubmit={async (values) => {
+            customer.order!.note = values['note']
+            customer.order!.status = OrderStatus.confirmed
+            try {
+                const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
+                if(error) {
+                    customer.order!.status = OrderStatus.draft
+                    setConfirmError(error)
+                }
+            } catch(e) {
+                customer.order!.status = OrderStatus.draft
+                setConfirmError((e as Error).toString())
+            }
+        }}>
+        {({ isSubmitting, getFieldProps }) => {
+            return <Stack spacing={1} component={Form}>
+                <TextField sx={{ width: '100%'}} minRows="3" {...getFieldProps('note')}/>
+                <Submit label="Confirmer la commande" isSubmitting={isSubmitting} submitError={confirmError}/>
+            </Stack>}
+        }
+        </Formik>
+    </Stack>
 }
 
 export default ReviewSendOrder

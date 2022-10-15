@@ -6,6 +6,8 @@ import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
 import EditOrder from './components/editOrder'
 import Loader from './components/loader'
 import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
+import { Box, Stack, Alert } from '@mui/material'
+import CustomerHeader from './components/customerHeader'
 
 const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
     // dates come as ISO strings from Api, but we want them typed as Dates
@@ -53,10 +55,27 @@ const Order = () => {
         }
     }, [slug])
 
-    return <Loader loading={salesCycleState.loading} error={salesCycleState.error} initial={false}>
-        <EditOrder 
+    let content = {} as JSX.Element
+    if(salesCycleState.customer) {
+        if (salesCycleState.customer.order?.status === OrderStatus.draft) {
+            content = <EditOrder 
             enrichedSalesCycle={salesCycleState.enrichedSalesCycle!}
             customer={salesCycleState.customer!}/>
+        } else if (salesCycleState.customer.order?.status === OrderStatus.confirmed) {
+            content = <Alert severity="success">Commande enregistrée ! Merci et à bientôt pour la livraison.</Alert>
+        }
+        if(salesCycleState.enrichedSalesCycle && salesCycleState.enrichedSalesCycle.salesCycle){
+            content = <Stack alignItems="center">
+                <CustomerHeader customer={salesCycleState.customer!} salesCycle={salesCycleState.enrichedSalesCycle!.salesCycle}/>
+                { content }
+            </Stack>
+        } else {
+            return content
+        }
+    }
+
+    return <Loader loading={salesCycleState.loading} error={salesCycleState.error} initial={false}>
+        { content }
     </Loader>
 }
 

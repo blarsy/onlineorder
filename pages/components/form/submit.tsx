@@ -1,5 +1,4 @@
 import { Button, CircularProgress, Box, Stack, Alert } from "@mui/material"
-import { useState, useEffect } from 'react'
 
 interface Props {
     isSubmitting: boolean,
@@ -9,13 +8,6 @@ interface Props {
 }
 
 const Submit = (props: Props) => {
-    const [pristine, setPristine] = useState(true)
-    useEffect(() => {
-        if(props.isSubmitting && pristine) {
-            setPristine(false)
-        }
-    }, [props.isSubmitting])
-
     return <Box display="flex" flexDirection="column" alignItems="center" gap="0.5rem">
         <Button variant="contained" type="submit" disabled={props.isSubmitting || props.disabled}>
             <Stack direction="row">
@@ -24,7 +16,6 @@ const Submit = (props: Props) => {
             </Stack>
         </Button>
         {props.submitError && <Alert severity="error">{props.submitError}</Alert>}
-        {!pristine && !props.isSubmitting && !props.submitError && <Alert severity="success">Terminé !</Alert>}
     </Box>
 
 }

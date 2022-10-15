@@ -2,7 +2,7 @@ import { Checkbox, FormControlLabel, Typography } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
 import { Box, Stack } from "@mui/system"
 import { OrderData } from "../../lib/common"
-import { makePrefCtrlId, OrderPrefs } from "./form/common"
+import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, OrderPrefs } from "./form/common"
 
 interface Props {
     order: OrderData,
@@ -12,34 +12,33 @@ interface Props {
     values: OrderPrefs
 }
 
-const week = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
-const easyDate = (date: Date) => `${week[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`
-
 const DeliveryPreferenceInput = ({ order, getFieldProps, touched, errors, values } : Props) => {
+    const idOfFirstCkeckbox = makePrefCtrlId(order.preferredDeliveryTimes[0].day, order.preferredDeliveryTimes[0].times[0].deliveryTime)
     return <Stack>
         <Typography variant="overline">Préférences de livraison</Typography>
         {
             order.preferredDeliveryTimes.map(dayPrefs => {
-                return <Box display="flex" alignItems="center">
-                    <label key={dayPrefs.day.valueOf()}>{easyDate(dayPrefs.day)}</label>
+                return <Box key={dayPrefs.day.valueOf()} display="flex" alignItems="center" flexWrap="wrap">
+                    <Box flex="0 0 3rem">{easyDate(dayPrefs.day)}</Box>
                     {
                         dayPrefs.times.map(dayTime => {
                             const ctrlId = makePrefCtrlId(dayPrefs.day, dayTime.deliveryTime)
-                            return <Box key={ctrlId}>
+                            return <Box flex="0 0 5rem" key={ctrlId}>
                                 <FormControlLabel
                                     value="top"
                                     control={<Checkbox
                                         {...getFieldProps(ctrlId)}/>}
-                                    label={dayTime.deliveryTime.toString()}
+                                    checked={values[ctrlId]}
+                                    label={getDeliveryTimeLabel(dayTime.deliveryTime)}
                                     labelPlacement="top"
                                 />
-                                { touched[ctrlId] && errors[ctrlId] && <Typography color="error" variant="caption">{errors[ctrlId]}</Typography> }
                             </Box>
                         })
                     }
                 </Box>
             })
         }
+       { Object.keys(touched).length > 0 && errors[idOfFirstCkeckbox] && <Typography color="error" variant="caption">{errors[idOfFirstCkeckbox]}</Typography>}
     </Stack>
 }
 

@@ -15,7 +15,7 @@ import Submit from "./form/submit"
 import OrderSummary from "./orderSummary"
 import { ProductsQuantities } from "./types"
 
-const EditOrderLines = ({ enrichedSalesCycle, customer, next }: OrderStepProps) => {
+const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {
     const [saveQuantitiesError, setSaveQuantitiesError] = useState('')
     return <Formik
         initialValues={getInitialValues(enrichedSalesCycle, customer.order)}
@@ -38,15 +38,10 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next }: OrderStepProps) 
                         order.quantities.push(quantityBeingAdded)
                     }
                 })
-                const res = await axios.put('/api/order', {
-                    slug: customer.slug,
-                    targetWeek: enrichedSalesCycle.salesCycle.targetWeek,
-                    order
-                })
-                if(res.status != 200) {
-                    setSaveQuantitiesError(`La sauvegarde de la commande a échoué: ${res.status} - ${res.statusText}`)
+                const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
+                if(error) {
+                    setSaveQuantitiesError(error)
                 } else {
-                    setSaveQuantitiesError('')
                     next!()
                 }
             } catch(e: any) {
