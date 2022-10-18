@@ -28,7 +28,6 @@ const Admin: NextPage = () => {
                 const signer = provider.getSigner()
                 setConnectionData({ walletAddress: await signer.getAddress(), signer })
             } catch (ex) {
-                console.log(ex)
                 setError('There was a failure connecting your wallet accoubt.')
             }
         } else {

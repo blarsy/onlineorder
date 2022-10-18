@@ -11,7 +11,6 @@ export default async function handler(
             const volumes = await getOrderVolumes()
             res.status(200).json(volumes)
         } catch (e: any) {
-            console.log(e)
             res.status(500).json({ error: e.toString() })
         }
     } else {

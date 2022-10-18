@@ -69,7 +69,6 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
                 }
             }
         })
-        console.log(totalHtva)
         return (<Box component={Form} alignSelf="center" display="flex" flexDirection="column" gap="1rem">
             { Object.keys(enrichedSalesCycle.productsByCategory).map((category, catIdx)=> {
                 return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">

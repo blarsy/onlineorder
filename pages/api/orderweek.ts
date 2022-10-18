@@ -37,7 +37,6 @@ export default async function handler(
             const file = await getDataFileContent()
             res.status(200).json(JSON.parse(file))
         } catch (e) {
-            console.log(e)
             res.status(500).json({ error: (e as Error).toString() })
         }
     } else {
