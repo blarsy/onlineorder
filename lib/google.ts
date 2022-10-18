@@ -3,15 +3,15 @@ import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3 } from 'googleapis'
 import { Readable } from 'stream'
 
-const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT
-const googlePrivateKey = JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey
+const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
+const googlePrivateKey = JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey as string
 
 export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
     const doc = new GoogleSpreadsheet(sheetId)
 
     await doc.useServiceAccountAuth({
-        client_email: googleServiceAccount!,
-        private_key: googlePrivateKey!
+        client_email: googleServiceAccount,
+        private_key: googlePrivateKey
     })
 
     await doc.loadInfo()
@@ -25,8 +25,8 @@ export const connectDrive = async (): Promise<drive_v3.Drive> => {
         const auth = new GoogleAuth({
             scopes: 'https://www.googleapis.com/auth/drive',
             credentials: {
-                client_email: googleServiceAccount!,
-                private_key: googlePrivateKey!
+                client_email: googleServiceAccount,
+                private_key: googlePrivateKey
             }
         })
     
