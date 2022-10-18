@@ -6,6 +6,7 @@ export interface ConnectionData {
 }
 
 export interface ProductData {
+    id: number,
     name: string, 
     category: string,
     quantity: number, 
@@ -16,6 +17,7 @@ export interface ProductData {
 }
 
 export interface NonLocalProductData {
+    id: number,
     name: string, 
     category: string,
     price: number, 
@@ -43,19 +45,12 @@ export enum DeliveryTimes {
 export interface OrderData {
     status: OrderStatus,
     quantities: {
-        quantity: number,
-        productName: string,
-        unit: string,
-        category: string,
-        price: number
+        productId: number,
+        quantity: number
     }[],
     quantitiesNonLocal: {
-        quantity: number,
-        productName: string,
-        unit: string,
-        category: string,
-        price: number,
-        packaging: number
+        productId: number,
+        quantity: number
     }[],
     preferredDeliveryTimes: {
         day: Date,
@@ -87,4 +82,14 @@ export interface SalesCycle {
     },
     creationDate: Date,
     deadline: Date
+}
+
+export interface OrderedVolumes {
+    [productId: number]: {
+        orders: {
+            customerSlug: string,
+            quantityOrdered: number
+        }[],
+        originalQuantity: number
+    }
 }

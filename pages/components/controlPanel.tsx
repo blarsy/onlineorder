@@ -38,7 +38,6 @@ yup.setLocale({
 const findNextWeekdayTime = (weekday: number, hour: number) => {
     const now = new Date()
     let refDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
-    console.log(refDate.getDay)
     while(refDate.getDay() != weekday){
         refDate = new Date(1000 * 60 * 60 * 24 + refDate.valueOf())
     }

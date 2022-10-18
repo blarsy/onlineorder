@@ -1,6 +1,4 @@
 import { Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material"
-import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
-import { ProductsQuantities } from "./types"
 
 interface Props {
     totalHtva: number

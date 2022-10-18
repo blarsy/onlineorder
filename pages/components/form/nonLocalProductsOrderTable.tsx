@@ -4,10 +4,7 @@ import { NonLocalProductData } from "../../../lib/common"
 import { ProductsQuantities } from "../types"
 
 interface Props {
-    products: {
-        product: NonLocalProductData,
-        ctrlId: string
-    }[],
+    products: NonLocalProductData[],
     touched: FormikTouched<ProductsQuantities>,
     errors: FormikErrors<ProductsQuantities>,
     getFieldProps: <Value = any>(props: any) => FieldInputProps<Value>,
@@ -29,26 +26,27 @@ const NonLocalProductsOrderTable = ({ products, touched, errors, getFieldProps, 
             </TableRow>
         </TableHead>
         <TableBody>
-            {products.map((productRec, index) => (
-            <TableRow key={index}>
-                <TableCell component="th" scope="row">{productRec.product.name}</TableCell>
-                <TableCell align="right">{productRec.product.unit}</TableCell>
-                <TableCell align="right">{productRec.product.price.toFixed(2)}€</TableCell>
-                <TableCell align="right">{productRec.product.packaging} {productRec.product.unit}</TableCell>
-                <TableCell align="right">
-                    <TextField size="small"
-                        id={productRec.ctrlId} error={touched[productRec.ctrlId] && !!errors[productRec.ctrlId]}
-                        helperText={errors[productRec.ctrlId]}
-                        {...getFieldProps(productRec.ctrlId)}
-                        sx={{ width: '5rem', 
-                            '& .MuiOutlinedInput-input':{
-                                textAlign: 'right', 
-                                padding: '0 3px'
-                        } }} />
-                </TableCell>
-                <TableCell align="right">{!errors[productRec.ctrlId] && `${Number(values[productRec.ctrlId] * Number(productRec.product.packaging) * productRec.product.price).toFixed(2)}€`}</TableCell>
-            </TableRow>
-            ))}
+            {products.map((product, index) => {
+                const formattedId = `nl${product.id}`
+                return <TableRow key={index}>
+                    <TableCell component="th" scope="row">{product.name}</TableCell>
+                    <TableCell align="right">{product.unit}</TableCell>
+                    <TableCell align="right">{product.price.toFixed(2)}€</TableCell>
+                    <TableCell align="right">{product.packaging} {product.unit}</TableCell>
+                    <TableCell align="right">
+                        <TextField size="small"
+                            id={formattedId} error={touched[formattedId] && !!errors[formattedId]}
+                            helperText={errors[formattedId]}
+                            {...getFieldProps(formattedId)}
+                            sx={{ width: '5rem', 
+                                '& .MuiOutlinedInput-input':{
+                                    textAlign: 'right', 
+                                    padding: '0 3px'
+                            } }} />
+                    </TableCell>
+                    <TableCell align="right">{!errors[formattedId] && `${Number(values[formattedId] * Number(product.packaging) * product.price).toFixed(2)}€`}</TableCell>
+                </TableRow>
+            })}
         </TableBody>
         </Table>
     </TableContainer>

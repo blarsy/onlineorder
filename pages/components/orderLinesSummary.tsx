@@ -1,53 +1,47 @@
-import { OrderData } from "../../lib/common"
+import { NonLocalProductData, OrderData, ProductData } from "../../lib/common"
 import { Stack, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Typography } from "@mui/material"
+import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
 
 interface Props {
-    order: OrderData
+    order: OrderData,
+    enrichedSalesCycle: EnrichedSalesCycle
 }
 
-const OrderLinesSummary = ({ order }: Props) => {
+const OrderLinesSummary = ({ order, enrichedSalesCycle }: Props) => {
     const quantitiesPerCategory: {
         [category: string]: {
-            productName: string,
-            quantity: number,
-            unit: string,
-            price: number,
+            product: ProductData,
+            quantity: number
         }[]
     } = {}
     const quantitiesNonLocalPerCategory: {
         [category: string]: {
-            productName: string,
-            quantity: number,
-            unit: string,
-            price: number,
-            packaging: number
+            product: NonLocalProductData,
+            quantity: number
         }[]
     } = {}
     order.quantities.forEach(quantity => {
+        const productInfo = enrichedSalesCycle.productsById[quantity.productId]
         const dataToAdd = {
-            productName: quantity.productName,
-            quantity: quantity.quantity,
-            unit: quantity.unit,
-            price: quantity.price
+            product: productInfo.product,
+            quantity: quantity.quantity
         }
-        if(quantitiesPerCategory[quantity.category]){
-            quantitiesPerCategory[quantity.category].push(dataToAdd)
+        if(quantitiesPerCategory[productInfo.product.category]){
+            quantitiesPerCategory[productInfo.product.category].push(dataToAdd)
         } else {
-            quantitiesPerCategory[quantity.category] = [ dataToAdd ]
+            quantitiesPerCategory[productInfo.product.category] = [dataToAdd]
         }
     })
     order.quantitiesNonLocal.forEach(quantity => {
+        const product = enrichedSalesCycle.nonLocalProductsById[quantity.productId]
         const dataToAdd = {
-            productName: quantity.productName,
-            quantity: quantity.quantity,
-            unit: quantity.unit,
-            price: quantity.price,
-            packaging: quantity.packaging
+            product,
+            quantity: quantity.quantity
         }
-        if(quantitiesNonLocalPerCategory[quantity.category]){
-            quantitiesNonLocalPerCategory[quantity.category].push(dataToAdd)
+        if(quantitiesNonLocalPerCategory[product.category]){
+            quantitiesNonLocalPerCategory[product.category].push(dataToAdd)
         } else {
-            quantitiesNonLocalPerCategory[quantity.category] = [ dataToAdd ]
+            quantitiesNonLocalPerCategory[product.category] = [ dataToAdd ]
         }
     })
     return <Stack spacing={1}>
@@ -69,11 +63,11 @@ const OrderLinesSummary = ({ order }: Props) => {
                             <TableCell colSpan={5} align="center"><Typography variant="overline">{category}</Typography></TableCell>
                         </TableRow>,
                         quantitiesPerCategory[category].map((quantity,idx) => <TableRow key={idx}>
-                            <TableCell>{quantity.productName}</TableCell>
+                            <TableCell>{quantity.product.name}</TableCell>
                             <TableCell align="right">{quantity.quantity}</TableCell>
-                            <TableCell align="right">{quantity.unit}</TableCell>
-                            <TableCell align="right">{quantity.price.toFixed(2)}€</TableCell>
-                            <TableCell align="right">{(quantity.quantity * quantity.price).toFixed(2)}€</TableCell>
+                            <TableCell align="right">{quantity.product.unit}</TableCell>
+                            <TableCell align="right">{quantity.product.price.toFixed(2)}€</TableCell>
+                            <TableCell align="right">{(quantity.quantity * quantity.product.price).toFixed(2)}€</TableCell>
                         </TableRow>)]
                     })}
                 </TableBody>
@@ -93,17 +87,17 @@ const OrderLinesSummary = ({ order }: Props) => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {Object.keys(quantitiesPerCategory).map(category => {
+                    {Object.keys(quantitiesNonLocalPerCategory).map(category => {
                         return [<TableRow key={`cat${category}`}>
                             <TableCell colSpan={5} align="center"><Typography variant="overline">{category}</Typography></TableCell>
                         </TableRow>,
                         quantitiesNonLocalPerCategory[category].map((quantity, idx) => <TableRow key={idx}>
-                            <TableCell>{quantity.productName}</TableCell>
+                            <TableCell>{quantity.product.name}</TableCell>
                             <TableCell align="right">{quantity.quantity}</TableCell>
-                            <TableCell align="right">{quantity.unit}</TableCell>
-                            <TableCell align="right">{quantity.price.toFixed(2)}€</TableCell>
-                            <TableCell align="right">{quantity.packaging}€</TableCell>
-                            <TableCell align="right">{(quantity.quantity * quantity.price * quantity.packaging).toFixed(2)}€</TableCell>
+                            <TableCell align="right">{quantity.product.unit}</TableCell>
+                            <TableCell align="right">{quantity.product.price.toFixed(2)}€</TableCell>
+                            <TableCell align="right">{quantity.product.packaging}€</TableCell>
+                            <TableCell align="right">{(quantity.quantity * quantity.product.price * quantity.product.packaging).toFixed(2)}€</TableCell>
                         </TableRow>)]
                     })}
                 </TableBody>

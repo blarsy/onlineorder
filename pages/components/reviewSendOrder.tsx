@@ -13,13 +13,19 @@ import DeliveryPreferences from './deliveryPreferences'
 
 const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCustomer }: OrderStepProps) => {
     const [confirmError, setConfirmError] = useState('')
-    const totalProductsHtva = customer.order!.quantities.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity), 0)
-    const totalNonLocalProductsHtva  = customer.order!.quantitiesNonLocal.reduce<number>((acc, quantity) => acc += quantity.price * Number(quantity.quantity) * Number(quantity.packaging), 0)
+    const totalProductsHtva = customer.order!.quantities.reduce<number>((acc, quantity) => {
+        const productInfo = enrichedSalesCycle.productsById[quantity.productId] 
+        return acc += productInfo.product.price * Number(quantity.quantity)
+    }, 0)
+    const totalNonLocalProductsHtva  = customer.order!.quantitiesNonLocal.reduce<number>((acc, quantity) => {
+        const product = enrichedSalesCycle.nonLocalProductsById[quantity.productId] 
+        return acc += product.price * Number(quantity.quantity) * Number(product.packaging)
+    }, 0)
     const totalHtva = totalProductsHtva + totalNonLocalProductsHtva
     return <Stack alignSelf="stretch" alignItems="stretch" spacing={1}>
-        <Button onClick={prev}>Etape précédente</Button>
+        <Button sx={{ alignSelf:"center" }} onClick={prev}>Etape précédente</Button>
         <Typography variant="h5">Passez votre commande en revue</Typography>
-        <OrderLinesSummary order={customer.order!} />
+        <OrderLinesSummary order={customer.order!} enrichedSalesCycle={enrichedSalesCycle} />
         <OrderSummary totalHtva={totalHtva} />
         <DeliveryPreferences order={customer.order!} />
         <Formik initialValues={{ note: customer.order!.note }} onSubmit={async (values) => {
@@ -32,9 +38,13 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCusto
                     setConfirmError(error)
                 }
                 mutateCustomer!(customer)
-            } catch(e) {
+            } catch(e : any) {
                 customer.order!.status = OrderStatus.draft
-                setConfirmError((e as Error).toString())
+                if(e.response && e.response.data && e.response.data && e.response.data.error.includes('out of stock')) {
+                    setConfirmError('Malheureusement, certains produits ont été commandés et confirmés par d\'autres clients pendant que vous composiez votre commande ici, et ne sont donc plus disponibles. Veuillez revenir en arrière et rééxaminer les quantités disponibles.')
+                } else {
+                    setConfirmError((e as Error).message)
+                }
             }
         }}>
         {({ isSubmitting, getFieldProps }) => {

@@ -1,6 +1,7 @@
 import { Stack, Box, Typography } from "@mui/material"
 import { CustomerData, SalesCycle } from "../../lib/common"
 import { getDateOfISOWeek, getWeekBounds } from "../../lib/dateWeek"
+import { easyDateTime } from "./form/common"
 
 interface Props {
     customer: CustomerData,
@@ -13,6 +14,7 @@ const CustomerHeader = ({ customer, salesCycle } : Props) => {
         <Box>
             <Typography variant="h4" align="center">{customer.customerName}</Typography>
             <Typography variant="h5" align="center">Commande semaine {`${salesCycle.targetWeek.weekNumber}-${salesCycle.targetWeek.year}  ${weekBounds[0].toLocaleDateString('fr-BE')} - ${weekBounds[1].toLocaleDateString('fr-BE')}`}</Typography>
+            <Typography variant="overline" align="center">Clôture: {easyDateTime(salesCycle.deadline)}</Typography>
         </Box>
     </Stack>
 }

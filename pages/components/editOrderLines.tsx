@@ -25,27 +25,21 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
                 order.quantities = []
                 order.quantitiesNonLocal = []
                 Object.keys(values).forEach(ctrlId => {
-                    if(values[ctrlId] != 0) {
+                    const id = ctrlId.toString()
+                    if(values[id] != 0) {
                         if(ctrlId.startsWith('nl')){
-                            const orderedProduct = enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId]
+                            const id = Number(ctrlId.substring(2))
                             const quantityBeingAdded = {
-                                productName: orderedProduct.name,
-                                quantity: Number(values[ctrlId]),
-                                price: orderedProduct.price,
-                                category: orderedProduct.category,
-                                unit: orderedProduct.unit,
-                                packaging: orderedProduct.packaging
+                                productId: id,
+                                quantity: Number(values[id]),
                             }
      
                             order.quantitiesNonLocal.push(quantityBeingAdded)
                         } else {
-                            const orderedProduct = enrichedSalesCycle.productsByCtrlId[ctrlId]
+                            const id = Number(ctrlId)
                             const quantityBeingAdded = {
-                                productName: orderedProduct.name,
-                                quantity: Number(values[ctrlId]),
-                                price: orderedProduct.price,
-                                category: orderedProduct.category,
-                                unit: orderedProduct.unit
+                                productId: id,
+                                quantity: Number(values[id])
                             }
      
                             order.quantities.push(quantityBeingAdded)
@@ -65,22 +59,25 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
         {({ isSubmitting, getFieldProps, errors, touched, values }) => {
         let totalHtva = 0
         Object.keys(values).forEach(ctrlId => {
-            if(Number(values[ctrlId]) != 0) {
+            if(Number(values[Number(ctrlId)]) != 0) {
                 if(ctrlId.startsWith('nl')) {
-                    totalHtva += enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId].price * 
+                    const id = Number(ctrlId.substring(2))
+                    totalHtva += enrichedSalesCycle.nonLocalProductsById[id].price * 
                         Number(values[ctrlId]) * 
-                        Number(enrichedSalesCycle.nonLocalProductsByCtrlId[ctrlId].packaging)
+                        Number(enrichedSalesCycle.nonLocalProductsById[id].packaging)
                 } else {
-                    totalHtva += enrichedSalesCycle.productsByCtrlId[ctrlId].price * Number(values[ctrlId])
+                    totalHtva += enrichedSalesCycle.productsById[Number(ctrlId)].product.price * Number(values[Number(ctrlId)])
                 }
             }
         })
+        console.log(totalHtva)
         return (<Box component={Form} alignSelf="center" display="flex" flexDirection="column" gap="1rem">
             { Object.keys(enrichedSalesCycle.productsByCategory).map((category, catIdx)=> {
                 return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
                     <Typography variant="h5">{category}</Typography>
                     <ProductsOrderTable 
-                        products={enrichedSalesCycle.productsByCategory[category]}
+                        productIds={enrichedSalesCycle.productsByCategory[category]}
+                        productsById={enrichedSalesCycle.productsById}
                         touched={touched}
                         errors={errors}
                         getFieldProps={getFieldProps}
@@ -117,33 +114,26 @@ function getInitialValues(enrichedSalesCycle: EnrichedSalesCycle, order: OrderDa
     let result = {} as ProductsQuantities
     Object.keys(enrichedSalesCycle.productsByCategory).map((category) => {
         if (order) {
-            enrichedSalesCycle.productsByCategory[category].map((productRec) => {
-                const relevantQuantity = order.quantities.find(
-                    quantity => quantity.productName == productRec.product.name && 
-                    quantity.category == productRec.product.category &&
-                    quantity.price == productRec.product.price)
-                result[productRec.ctrlId] = relevantQuantity?.quantity || 0
+            enrichedSalesCycle.productsByCategory[category].map((productId) => {
+                const relevantQuantity = order.quantities.find(quantity => quantity.productId == productId)
+                result[productId] = relevantQuantity?.quantity || 0
             })
         } else {
-            enrichedSalesCycle.productsByCategory[category].map((productRec) => {
-                result[productRec.ctrlId] = 0
+            enrichedSalesCycle.productsByCategory[category].map((productId) => {
+                result[productId] = 0
             })
         }
     })
 
     Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category) => {
         if (order) {
-            enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
-                const relevantQuantity = order.quantitiesNonLocal.find(
-                    quantity => quantity.productName == productRec.product.name && 
-                    quantity.category == productRec.product.category &&
-                    quantity.price == productRec.product.price &&
-                    quantity.packaging == productRec.product.packaging)
-                result[productRec.ctrlId] = relevantQuantity?.quantity || 0
+            enrichedSalesCycle.nonLocalProductsByCategory[category].map((product) => {
+                const relevantQuantity = order.quantitiesNonLocal.find(quantity => quantity.productId == product.id)
+                result[`nl${product.id}`] = relevantQuantity?.quantity || 0
             })
         } else {
-            enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
-                result[productRec.ctrlId] = 0
+            enrichedSalesCycle.nonLocalProductsByCategory[category].map((product) => {
+                result[`nl${product.id}`] = 0
             })
         }
     })
@@ -153,13 +143,13 @@ function getInitialValues(enrichedSalesCycle: EnrichedSalesCycle, order: OrderDa
 function getValidationSchema(enrichedSalesCycle: EnrichedSalesCycle):any  {
     const result = {} as any
     Object.keys(enrichedSalesCycle.productsByCategory).map((category) => {
-        enrichedSalesCycle.productsByCategory[category].map((productRec) => {
-            result[productRec.ctrlId] = yup.number().max(productRec.product.quantity).min(0)
+        enrichedSalesCycle.productsByCategory[category].map((productId) => {
+            result[productId] = yup.number().max(enrichedSalesCycle.productsById[productId].updatedQuantity).min(0)
         })
     })
     Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category) => {
-        enrichedSalesCycle.nonLocalProductsByCategory[category].map((productRec) => {
-            result[productRec.ctrlId] = yup.number().min(0)
+        enrichedSalesCycle.nonLocalProductsByCategory[category].map((product) => {
+            result[`nl${product.id}`] = yup.number().min(0)
         })
     })
     return result

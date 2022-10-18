@@ -1,8 +1,8 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
-import { Readable } from 'stream'
 import { drive_v3 } from 'googleapis'
-import { ProductData, CustomerData, SalesCycle, NonLocalProductData } from './common'
-import { getWorkingFolder, connectSpreadsheet, connectDrive } from './google'
+import { ProductData, CustomerData, NonLocalProductData } from './common'
+import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile } from './google'
+import { create as createVolumesFile } from './volumesFile'
 
 
 const googleSheetIdProducts = process.env.GOOGLE_SHEET_ID_PRODUCTS!
@@ -10,39 +10,10 @@ const googleSheetIdCustomers = process.env.GOOGLE_SHEET_ID_CUSTOMERS!
 const workingFileName = process.env.WORKING_FILE_NAME!
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
 
-async function createRemoteDataFile(service: drive_v3.Drive, fileContent: SalesCycle, fileName: string) : Promise<drive_v3.Schema$File>{
-  const parentFolder = await getWorkingFolder(service, workingFolderName)
-
-  const existingDataFile = await getDataFile(service)
-
-  if(existingDataFile) {
-    await service.files.copy({
-      fileId: existingDataFile.id!,
-      requestBody: {
-        name: (Number(new Date())).toString(),
-        parents: [parentFolder.id!]
-      }
-    })
-    await service.files.delete({
-      fileId: existingDataFile.id!
-    })
-  }
-
-  const res = await service.files.create({ 
-    media:{
-      body: Readable.from([JSON.stringify(fileContent)]),
-      mimeType:  'application/json',
-    },
-    requestBody: {
-      parents: [parentFolder.id!],
-      name: `${fileName}.json`,
-    }
-  })
-  if (res.status === 200) {
-    return res.data
-  } else {
-    throw new Error(`remote file creation failed with status ${res.status} : ${res.statusText}`)
-  }
+let id = 0
+const nextId = () => {
+  id ++
+  return id
 }
 
 const getProductData = async(doc: GoogleSpreadsheet):Promise<ProductData[]> => {
@@ -56,11 +27,9 @@ const getProductData = async(doc: GoogleSpreadsheet):Promise<ProductData[]> => {
         name = sheet.getCell(i, 1).value as string
         unit = sheet.getCell(i, 2).value as string
         quantity = sheet.getCell(i, 3).value as number
-        quantityPerSmallCrate = sheet.getCell(i, 4).value as number | undefined,
-        quantityPerBigCrate = sheet.getCell(i, 5).value as number | undefined,
-        price = sheet.getCell(i, 6).value as number
+        price = sheet.getCell(i, 4).value as number
         if(name && quantity > 0) {
-          availableProducts.push({name, category, quantity, price, unit, quantityPerSmallCrate, quantityPerBigCrate})
+          availableProducts.push({id: nextId(), name, category, quantity, price, unit, quantityPerSmallCrate, quantityPerBigCrate})
         }
         i ++
     }
@@ -95,14 +64,19 @@ export const createDataFile = async (weekNumber: number, year: number, deadline:
     const nonLocalProducts = await getNonLocalProducts(docCustomersAndOther)
     const customers = await getCustomerData(docCustomersAndOther)
 
+    const salesCycle = {products, nonLocalProducts, customers, 
+      targetWeek: { weekNumber, year }, creationDate: new Date(), deadline }
+
     const service = await connectDrive()
-    return await createRemoteDataFile(service, {products, nonLocalProducts, customers, targetWeek: { weekNumber, year }, creationDate: new Date(), deadline }, workingFileName)
+    const result = await createRemoteFile(service, salesCycle, workingFileName, workingFolderName)
+    await createVolumesFile(salesCycle)
+    return result
 }
 
 const getDataFile = async(service: drive_v3.Drive): Promise<drive_v3.Schema$File | null> => {
   const workingFolder = await getWorkingFolder(service, workingFolderName)
   const res = await service.files.list({
-    q: `name = '${workingFileName}.json' and '${workingFolder.id!}' in parents`,
+    q: `name = '${workingFileName}' and '${workingFolder.id!}' in parents`,
     fields: 'files(id, name)',
     spaces: 'drive',
   })
@@ -118,7 +92,7 @@ export const getDataFileContent = async (): Promise<string> => {
   const dataFile = await getDataFile(service)
   
   if(!dataFile){
-    throw new Error(`Remote working file ${workingFileName}.json not found`)
+    throw new Error(`Remote working file ${workingFileName} not found`)
   }
 
   const fileWithContent = await service.files.get({
@@ -149,10 +123,11 @@ const getNonLocalProducts = async (doc: GoogleSpreadsheet): Promise<NonLocalProd
       price = sheet.getCell(i, 4).value as number
       if(name) {
         nonLocalProducts.push({
-          category, name, unit, packaging, price
+          id: nextId(), category, name, unit, packaging, price
         })
       }
       i ++
   }
   return nonLocalProducts
 }
+

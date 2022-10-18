@@ -75,6 +75,15 @@ export const getOrCreateFolder = async (service: drive_v3.Drive, folderName: str
     return folder
 }
 
+export const updateFile = async (service: drive_v3.Drive, fileId: string, slug: string, parentFolderId: string, content: object): Promise<void> => {
+    const res = await service.files.update({
+        fileId: fileId,
+        media:{
+          body: Readable.from([JSON.stringify(content)])
+        }
+      })
+}
+
 export const createOrReplaceFile = async (service: drive_v3.Drive, slug: string, parentFolderId: string, content: object): Promise<void> => {
     const existingFileId = await getFileId(service, slug + '.json', parentFolderId)
     let res
@@ -127,7 +136,44 @@ export const getFileId = async (service: drive_v3.Drive, name: string, parentFol
     if (res.data?.files?.length === 1) {
         return res.data.files[0].id!
     } else {
-        console.log(`Remote file ${name} not found`)
         return ''
     }
 }
+
+export const archiveFile = async (service: drive_v3.Drive, fileId: string, archivePrefix: string, parentFolderId: string) => {
+    await service.files.copy({
+        fileId,
+        requestBody: {
+            name: (`${archivePrefix}${Number(new Date())}`),
+            parents: [parentFolderId]
+        }
+    })
+    await service.files.delete({
+        fileId
+    })
+}
+
+export async function createRemoteFile(service: drive_v3.Drive, fileContent: object, fileName: string, workingFolderName: string) : Promise<drive_v3.Schema$File>{
+    const parentFolder = await getWorkingFolder(service, workingFolderName)
+    const existingDataFileId = await getFileId(service, fileName, parentFolder.id!)
+  
+    if(existingDataFileId) {
+      await archiveFile(service, existingDataFileId, fileName, parentFolder.id!)
+    }
+  
+    const res = await service.files.create({ 
+      media:{
+        body: Readable.from([JSON.stringify(fileContent)]),
+        mimeType:  'application/json',
+      },
+      requestBody: {
+        parents: [parentFolder.id!],
+        name: fileName,
+      }
+    })
+    if (res.status === 200) {
+      return res.data
+    } else {
+      throw new Error(`remote file creation failed with status ${res.status} : ${res.statusText}`)
+    }
+  }

@@ -24,6 +24,17 @@ const Order = () => {
         enrichedSalesCycle: null as EnrichedSalesCycle | null,
         customer: null as CustomerData | null
     })
+
+    const refreshQuantities = async () => {
+        const customer = salesCycleState.customer
+        setSalesCycleState({ loading: true, error: '', enrichedSalesCycle: null, customer: null })
+        try{
+            const enrichedSalesCycle = await getData()
+            setSalesCycleState({ loading: false, error: '', enrichedSalesCycle, customer })
+        } catch(e) {
+            setSalesCycleState({ loading: false, error: e as string, enrichedSalesCycle: null, customer: null })
+        }
+    }
     
     useEffect(() => {
         const load = async () => {
@@ -34,7 +45,7 @@ const Order = () => {
                 if(!customer){
                     setSalesCycleState({ loading: false, error: `Ce numéro de client n'existe pas`, enrichedSalesCycle: null, customer: null})
                 } else {
-                    const res = await axios(`./api/order?weeknumber=${enrichedSalesCycle.salesCycle.targetWeek.weekNumber}&year=${enrichedSalesCycle.salesCycle.targetWeek.year}&slug=${slug}`)
+                    const res = await axios.get(`./api/order?weeknumber=${enrichedSalesCycle.salesCycle.targetWeek.weekNumber}&year=${enrichedSalesCycle.salesCycle.targetWeek.year}&slug=${slug}`)
                     if(res.status != 200) {
                         setSalesCycleState({ loading: false, error: `Erreur pendant le chargement de la commande : ${res.statusText}`, enrichedSalesCycle: null, customer: null})
                     } else {
@@ -65,7 +76,8 @@ const Order = () => {
             content = <EditOrder 
                 enrichedSalesCycle={salesCycleState.enrichedSalesCycle!}
                 customer={salesCycleState.customer!}
-                mutateCustomer={(customer: CustomerData) => setSalesCycleState({...salesCycleState, ...{customer }})}/>
+                mutateCustomer={(customer: CustomerData) => setSalesCycleState({...salesCycleState, ...{customer }})}
+                refreshQuantities={refreshQuantities}/>
         }
 
         if(salesCycleState.enrichedSalesCycle && salesCycleState.enrichedSalesCycle.salesCycle){
