@@ -22,8 +22,10 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
                     const day = new Date(Number(dateValue))
                     const hourKey = hour as keyof typeof DeliveryTimes
                     const deliveryDay = customer.order!.preferredDeliveryTimes.find(deliveryTime => deliveryTime.day.valueOf() == day.valueOf())!
-                    const deliveryTime = deliveryDay.times.find(time => DeliveryTimes[time.deliveryTime] === DeliveryTimes[hourKey])!
-                    deliveryTime.checked = values[key] as boolean
+                    const deliveryTime = deliveryDay.times.find(time => time.deliveryTime === DeliveryTimes[hourKey])
+                    if(deliveryTime){
+                        deliveryTime.checked = values[key] as boolean
+                    }
                 })
                 const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
                 if(error) {
