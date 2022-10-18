@@ -4,7 +4,7 @@ import { google, drive_v3 } from 'googleapis'
 import { Readable } from 'stream'
 
 const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT
-const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY
+const googlePrivateKey = JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey
 
 export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
     const doc = new GoogleSpreadsheet(sheetId)
