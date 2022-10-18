@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Stack } from "@mui/material"
 import { CustomerData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
-import './form/common'
+import '../../lib/formCommon'
 import EditOrderLines from "./editOrderLines"
 import EditPreferences from "./editPreferences"
 import ReviewSendOrder from "./reviewSendOrder"

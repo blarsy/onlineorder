@@ -7,7 +7,7 @@ import {
 import * as yup from 'yup'
 import { DeliveryTimes, OrderData } from "../../lib/common"
 import DeliveryPreferenceInput from "./deliveryPreferenceInput"
-import { makePrefCtrlId, OrderStepProps } from "./form/common"
+import { makePrefCtrlId, OrderStepProps } from "../../lib/formCommon"
 import Submit from "./form/submit"
 
 const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: OrderStepProps) => {

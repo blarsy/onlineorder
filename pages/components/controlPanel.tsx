@@ -16,7 +16,7 @@ import * as yup from 'yup'
 import { ConnectionData } from '../../lib/common'
 import { isCurrentOrNextWeekNumber, getWeek } from '../../lib/dateWeek'
 import Submit from './form/submit'
-import './form/common'
+import './form/formCommon'
 
 interface Props {
     connectionData: ConnectionData
