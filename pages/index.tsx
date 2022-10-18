@@ -6,7 +6,7 @@ const Home: NextPage = () => {
   return (
     <Box display='flex' flexDirection='column' alignItems='center' justifyContent='space-evenly' flexGrow='1'>
         <Link color='CaptionText' href="https://coopalimentaire.be/" underline='none' display='flex' alignItems='center'>
-          <Image src='/Logo-header.png' width={100} height={100}/>
+          <Image src='/Logo-header.png' width={100} height={100} alt="Logo de la Coopérative alimentaire"/>
           <Typography textAlign='center' variant='h3'>La Coop alimentaire</Typography>
         </Link>
         <Typography textAlign='center' variant='h4'>Pour entrer ici, il vous faut un numéro de client ...</Typography>

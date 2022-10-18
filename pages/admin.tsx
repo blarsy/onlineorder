@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { useState } from 'react'
 import { Alert, Box, Button } from '@mui/material'
 import { ethers, providers } from 'ethers'
-import ControlPanel from './components/controlPanel'
+import ControlPanel from '../components/controlPanel'
 import { ConnectionData } from '../lib/common'
 
 declare global {

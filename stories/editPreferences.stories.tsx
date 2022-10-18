@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { ComponentStory, ComponentMeta } from '@storybook/react'
-import EditPreferences from '../pages/components/editPreferences'
+import EditPreferences from '../components/editPreferences'
 import { CustomerData, DeliveryTimes, OrderData, OrderStatus } from '../lib/common'
 import { EnrichedSalesCycle } from '../lib/salesCycleCache'
 

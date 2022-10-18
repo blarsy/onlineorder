@@ -4,8 +4,8 @@ import {
     Form,
     Formik,
   } from 'formik'
-import { OrderStatus } from "../../lib/common"
-import { OrderStepProps } from "../../lib/formCommon"
+import { OrderStatus } from "../lib/common"
+import { OrderStepProps } from "../lib/formCommon"
 import Submit from "./form/submit"
 import OrderLinesSummary from "./orderLinesSummary"
 import OrderSummary from "./orderSummary"

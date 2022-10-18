@@ -13,10 +13,10 @@ import {
     Form,
   } from 'formik'
 import * as yup from 'yup'
-import { ConnectionData } from '../../lib/common'
-import { isCurrentOrNextWeekNumber, getWeek } from '../../lib/dateWeek'
+import { ConnectionData } from '../lib/common'
+import { isCurrentOrNextWeekNumber, getWeek } from '../lib/dateWeek'
 import Submit from './form/submit'
-import './form/formCommon'
+import '../lib/formCommon'
 
 interface Props {
     connectionData: ConnectionData
