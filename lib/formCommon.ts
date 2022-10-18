@@ -1,6 +1,6 @@
 import { setLocale } from 'yup'
-import { CustomerData, DeliveryTimes } from '../../../lib/common'
-import { EnrichedSalesCycle } from '../../../lib/salesCycleCache'
+import { CustomerData, DeliveryTimes } from './common'
+import { EnrichedSalesCycle } from './salesCycleCache'
 setLocale({
     mixed: {
       required: 'Obligatoire',
@@ -37,3 +37,7 @@ export const easyDate = (date: Date) => `${week[date.getDay()]} ${date.getDate()
 export const makePrefCtrlId = (day: Date, deliveryTime: DeliveryTimes) => `${day.valueOf()}-${deliveryTime.toString()}`
 
 export const easyDateTime = (date: Date) => `${week[date.getDay()]} ${zeroPad(date.getDate(), 2)}/${zeroPad((date.getMonth() + 1), 2)} ${zeroPad(date.getHours(), 2)}:${zeroPad(date.getMinutes(), 2)}`
+
+export interface ProductsQuantities {
+  [id: string]: number
+}

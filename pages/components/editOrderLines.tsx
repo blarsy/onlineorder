@@ -7,12 +7,11 @@ import { useState } from "react"
 import * as yup from 'yup'
 import { OrderData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
-import { OrderStepProps } from "./form/common"
+import { OrderStepProps, ProductsQuantities } from "../../lib/formCommon"
 import NonLocalProductsOrderTable from "./form/nonLocalProductsOrderTable"
 import ProductsOrderTable from "./form/productsOrderTable"
 import Submit from "./form/submit"
 import OrderSummary from "./orderSummary"
-import { ProductsQuantities } from "./types"
 
 const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {
     const [saveQuantitiesError, setSaveQuantitiesError] = useState('')
