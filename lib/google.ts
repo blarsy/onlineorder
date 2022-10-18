@@ -2,11 +2,17 @@ import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3 } from 'googleapis'
 import { Readable } from 'stream'
-import creds from '../google-creds.json'
+
+const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT
+const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY
 
 export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
     const doc = new GoogleSpreadsheet(sheetId)
-    await doc.useServiceAccountAuth(creds)
+
+    await doc.useServiceAccountAuth({
+        client_email: googleServiceAccount!,
+        private_key: googlePrivateKey!
+    })
 
     await doc.loadInfo()
     return doc
@@ -18,7 +24,10 @@ export const connectDrive = async (): Promise<drive_v3.Drive> => {
     if(!service) {
         const auth = new GoogleAuth({
             scopes: 'https://www.googleapis.com/auth/drive',
-            credentials: creds
+            credentials: {
+                client_email: googleServiceAccount!,
+                private_key: googlePrivateKey!
+            }
         })
     
         service = google.drive({version: 'v3', auth})
