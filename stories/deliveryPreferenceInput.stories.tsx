@@ -60,7 +60,8 @@ const order: OrderData = {
   ],
   note: '',
   status: OrderStatus.draft,
-  quantities: []
+  quantities: [],
+  quantitiesNonLocal: []
 }
 
 const getFieldProps = (name: string) => {

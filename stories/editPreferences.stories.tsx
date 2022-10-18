@@ -67,7 +67,8 @@ const customer: CustomerData = {
         ],
         note: '',
         status: OrderStatus.draft,
-        quantities: []
+        quantities: [],
+        quantitiesNonLocal: []
     }
 }
 
