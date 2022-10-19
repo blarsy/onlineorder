@@ -1,6 +1,9 @@
 import { setLocale } from 'yup'
-import { CustomerData, DeliveryTimes } from './common'
+import { CustomerData, DeliveryTimes, OrderData } from './common'
 import { EnrichedSalesCycle } from './salesCycleCache'
+
+export const VATFOOD = 0.06
+
 setLocale({
     mixed: {
       required: 'Obligatoire',
@@ -40,4 +43,17 @@ export const easyDateTime = (date: Date) => `${week[date.getDay()]} ${zeroPad(da
 
 export interface ProductsQuantities {
   [id: string]: number
+}
+
+export const getOrderTotal = (order: OrderData, enrichedSalesCycle: EnrichedSalesCycle):{ totalHtva: number, tva: number } => {
+  const totalProductsHtva = order.quantities.reduce<number>((acc, quantity) => {
+      const productInfo = enrichedSalesCycle.productsById[quantity.productId] 
+      return acc += productInfo.product.price * Number(quantity.quantity)
+  }, 0)
+  const totalNonLocalProductsHtva  = order.quantitiesNonLocal.reduce<number>((acc, quantity) => {
+      const product = enrichedSalesCycle.nonLocalProductsById[quantity.productId] 
+      return acc += product.price * Number(quantity.quantity) * Number(product.packaging)
+  }, 0)
+  const totalHtva = totalProductsHtva + totalNonLocalProductsHtva
+  return { totalHtva, tva: totalHtva * VATFOOD }
 }

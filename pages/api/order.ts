@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next"
-import { CustomerData, OrderData } from "../../lib/common"
-import { getOrder, saveOrder } from "../../lib/orderFile"
+import { OrderCustomer, OrderData } from "../../lib/common"
+import { getOrder, saveOrder, getOrderCustomers } from "../../lib/orderFile"
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<{ error: string} | OrderData | null>
+    res: NextApiResponse<{ error: string} | OrderData | OrderCustomer[] | null>
   ) {
     if(req.method === 'PUT') {
         try {
@@ -18,11 +18,24 @@ export default async function handler(
             res.status(500).json({ error :(e as Error).message })
         }
     } else if (req.method === 'GET') {
-        try {
-            const order = await getOrder(Number(req.query.weeknumber), Number(req.query.year), req.query.slug as string)
-            res.status(200).json(order?.order || null)
-        } catch (e) {
-            res.status(500).json({ error: (e as Error).toString() })
+        if(req.query.weeknumber && req.query.year && req.query.slug) {
+            try {
+                const order = await getOrder(Number(req.query.weeknumber), Number(req.query.year), req.query.slug as string)
+                res.status(200).json(order?.order || null)
+            } catch (e) {
+                res.status(500).json({ error: (e as Error).toString() })
+            }
+        } else {
+            if(req.query.weeknumber && req.query.year) {
+                try {
+                    const orderCustomers = await getOrderCustomers(Number(req.query.weeknumber), Number(req.query.year))
+                    res.status(200).json(orderCustomers)
+                } catch (e) {
+                    res.status(500).json({ error: (e as Error).toString() })
+                }
+            } else {
+                res.status(422).json({ error : 'missing parameters'})
+            }
         }
     } else {
         res.status(501).json({ error: 'Unexpected method'})

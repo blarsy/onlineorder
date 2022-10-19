@@ -52,7 +52,7 @@ const Order = () => {
                         if(res.data) {
                             customer.order = orderFromApiCallResult(res.data)
                         } else {
-                            customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.targetWeek.weekNumber, enrichedSalesCycle.salesCycle.targetWeek.year)
+                            customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.targetWeek.weekNumber, enrichedSalesCycle.salesCycle.targetWeek.year, customer.slug)
                         }
                         setSalesCycleState({ loading: false, error: '', enrichedSalesCycle, customer })
                     }
@@ -97,12 +97,13 @@ const Order = () => {
 
 export default Order
 
-function createOrderWithDefaults(weekNumber: number, year: number): OrderData {
+function createOrderWithDefaults(weekNumber: number, year: number, slug: string): OrderData {
     const mondayOfTargetWeek = getDateOfISOWeek(weekNumber, year)
     const thursdayOfTargetWeek = addDays(mondayOfTargetWeek, 3)
     const fridayOfTargetWeek = addDays(mondayOfTargetWeek, 4)
 
     return {
+        slug,
         status: OrderStatus.draft,
         preferredDeliveryTimes: [{
             day: thursdayOfTargetWeek,

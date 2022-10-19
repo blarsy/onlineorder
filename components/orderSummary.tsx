@@ -1,11 +1,12 @@
 import { Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material"
+import { VATFOOD } from "../lib/formCommon"
 
 interface Props {
     totalHtva: number
 }
 
 const OrderSummary = ({ totalHtva }: Props) => {
-    const tva = totalHtva * 0.06
+    const tva = totalHtva * VATFOOD
     return <TableContainer component={Paper}>
         <Table>
         <TableHead sx={{ backgroundColor: '#CCC'}}>

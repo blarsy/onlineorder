@@ -43,6 +43,7 @@ export enum DeliveryTimes {
 }
 
 export interface OrderData {
+    slug: string,
     status: OrderStatus,
     quantities: {
         productId: number,
@@ -92,4 +93,9 @@ export interface OrderedVolumes {
         }[],
         originalQuantity: number
     }
+}
+
+export interface OrderCustomer {
+    order: OrderData,
+    customer: CustomerData
 }

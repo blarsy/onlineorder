@@ -30,7 +30,7 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
                             const id = Number(ctrlId.substring(2))
                             const quantityBeingAdded = {
                                 productId: id,
-                                quantity: Number(values[id]),
+                                quantity: Number(values[ctrlId]),
                             }
      
                             order.quantitiesNonLocal.push(quantityBeingAdded)

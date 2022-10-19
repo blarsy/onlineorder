@@ -12,7 +12,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <CssBaseline/>
-      <Box display='flex' flexDirection='column' sx={{flexGrow: '1'}}>
+      <Box display='flex' flexDirection='column' sx={{flexGrow: '1', padding: '0.5rem'}}>
         <Component {...pageProps}/>
       </Box>
     </Container>

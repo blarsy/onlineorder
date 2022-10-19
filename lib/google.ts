@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3 } from 'googleapis'
 import { Readable } from 'stream'
+import { OrderData } from './common'
 
 const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
 const googlePrivateKey = JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey as string
@@ -162,7 +163,7 @@ export const archiveFile = async (service: drive_v3.Drive, fileId: string, archi
     })
 }
 
-export async function createRemoteFile(service: drive_v3.Drive, fileContent: object, fileName: string, workingFolderName: string) : Promise<drive_v3.Schema$File>{
+export const createRemoteFile = async (service: drive_v3.Drive, fileContent: object, fileName: string, workingFolderName: string) : Promise<drive_v3.Schema$File> => {
     const parentFolder = await getWorkingFolder(service, workingFolderName)
     const existingDataFileId = await getFileId(service, fileName, parentFolder.id!)
   
@@ -185,4 +186,24 @@ export async function createRemoteFile(service: drive_v3.Drive, fileContent: obj
     } else {
       throw new Error(`remote file creation failed with status ${res.status} : ${res.statusText}`)
     }
-  }
+}
+
+export const getOrdersInFolder = async (service: drive_v3.Drive, folderId: string): Promise<OrderData[]> => {
+    const list = await service.files.list({
+        q: `'${folderId}' in parents`,
+        fields: 'files(id)',
+        spaces: 'drive',
+    })
+    if(list.data && list.data.files){
+        return Promise.all(list.data.files.map(file => new Promise<OrderData>(async (resolve, reject) => {
+            try {
+                const content = await getFileContent(service, file.id!)
+                resolve(JSON.parse(content) as OrderData)
+            } catch(e) {
+                reject(e)
+            }
+        })))
+    } else {
+        return []
+    }
+}

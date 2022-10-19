@@ -35,7 +35,7 @@ const Admin: NextPage = () => {
         }
     }
     return (
-        <Box display='flex' flexDirection='column' justifyContent='space-between' flexGrow='1'>
+        <Box display='flex' flexDirection='column' alignItems='center' flexGrow='1'>
             { !connectionData.walletAddress && <Button variant="contained" sx={{ alignSelf: 'center' }} onClick={tryConnect}>Connect</Button>}
             {error && <Alert variant="filled" severity="error">{error}</Alert>}
             { connectionData.walletAddress &&  <ControlPanel connectionData={connectionData}/>}
