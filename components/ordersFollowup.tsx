@@ -36,6 +36,7 @@ const OrdersFollowup = () => {
             }
         }
         load()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     return <Loader error={ordersState.error} loading={ordersState.loading} initial={false}>
         <Box display="flex" flexDirection="row" flexWrap="wrap" alignSelf="stretch">

@@ -23,6 +23,7 @@ const customer: CustomerData = {
     mobileNumber:'',
     customerName:'',
     order: {
+        slug:'',
         preferredDeliveryTimes: [
             {
             day: new Date(2022,10,25, 0,0,0),

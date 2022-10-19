@@ -16,6 +16,7 @@ export default {
 
 
 const order: OrderData = {
+  slug: '',
   preferredDeliveryTimes: [
     {
       day: new Date(2022,10,25, 0,0,0),
