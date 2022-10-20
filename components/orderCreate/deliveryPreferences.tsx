@@ -1,7 +1,7 @@
 import { Typography } from "@mui/material"
 import { Box } from "@mui/system"
-import { DeliveryTimes, OrderData } from "../lib/common"
-import { easyDate, getDeliveryTimeLabel } from "../lib/formCommon"
+import { DeliveryTimes, OrderData } from "../../lib/common"
+import { easyDate, getDeliveryTimeLabel } from "../../lib/formCommon"
 
 interface Props {
     order: OrderData

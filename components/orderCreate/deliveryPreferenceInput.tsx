@@ -1,8 +1,8 @@
 import { Checkbox, FormControlLabel, Typography } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
 import { Box, Stack } from "@mui/system"
-import { OrderData } from "../lib/common"
-import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, OrderPrefs } from "../lib/formCommon"
+import { OrderData } from "../../lib/common"
+import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, OrderPrefs } from "../../lib/formCommon"
 
 interface Props {
     order: OrderData,

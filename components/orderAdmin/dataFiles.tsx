@@ -3,7 +3,7 @@ import { DateTimePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState } from 'react'
 import { JSONTree } from 'react-json-tree'
-import Loader from './loader'
+import Loader from '../form/loader'
 import axios from 'axios'
 import {
     Formik,
@@ -11,10 +11,10 @@ import {
     Form,
   } from 'formik'
 import * as yup from 'yup'
-import { isCurrentOrNextWeekNumber, getWeek } from '../lib/dateWeek'
-import Submit from './form/submit'
-import '../lib/formCommon'
-import { ConnectionData } from '../lib/common'
+import { isCurrentOrNextWeekNumber, getWeek } from '../../lib/dateWeek'
+import Submit from '../form/submit'
+import '../../lib/formCommon'
+import { ConnectionData } from '../../lib/common'
 
 interface Props {
     connectionData: ConnectionData

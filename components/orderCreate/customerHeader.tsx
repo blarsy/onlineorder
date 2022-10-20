@@ -1,7 +1,7 @@
 import { Stack, Box, Typography } from "@mui/material"
-import { CustomerData, SalesCycle } from "../lib/common"
-import { getDateOfISOWeek, getWeekBounds } from "../lib/dateWeek"
-import { easyDateTime } from "../lib/formCommon"
+import { CustomerData, SalesCycle } from "../../lib/common"
+import { getDateOfISOWeek, getWeekBounds } from "../../lib/dateWeek"
+import { easyDateTime } from "../../lib/formCommon"
 
 interface Props {
     customer: CustomerData,

@@ -5,12 +5,12 @@ import {
   } from 'formik'
 import { useState } from "react"
 import * as yup from 'yup'
-import { OrderData } from "../lib/common"
-import { EnrichedSalesCycle } from "../lib/salesCycleCache"
-import { OrderStepProps, ProductsQuantities } from "../lib/formCommon"
-import NonLocalProductsOrderTable from "./form/nonLocalProductsOrderTable"
-import ProductsOrderTable from "./form/productsOrderTable"
-import Submit from "./form/submit"
+import { OrderData } from "../../lib/common"
+import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
+import { OrderStepProps, ProductsQuantities } from "../../lib/formCommon"
+import NonLocalProductsOrderTable from "../orderCreate/nonLocalProductsOrderTable"
+import ProductsOrderTable from "./productsOrderTable"
+import Submit from "../form/submit"
 import OrderSummary from "./orderSummary"
 
 const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {

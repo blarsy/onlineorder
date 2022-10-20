@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { CustomerData, DeliveryTimes, OrderData, OrderStatus } from '../lib/common'
 import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
-import EditOrder from '../components/editOrder'
-import Loader from '../components/loader'
+import EditOrder from '../components/orderCreate/editOrder'
+import Loader from '../components/form/loader'
 import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
 import { Stack, Alert } from '@mui/material'
-import CustomerHeader from '../components/customerHeader'
+import CustomerHeader from '../components/orderCreate/customerHeader'
 
 const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
     // dates come as ISO strings from Api, but we want them typed as Dates

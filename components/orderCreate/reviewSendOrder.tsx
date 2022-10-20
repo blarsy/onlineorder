@@ -4,10 +4,10 @@ import {
     Form,
     Formik,
   } from 'formik'
-import { OrderStatus } from "../lib/common"
-import { OrderStepProps } from "../lib/formCommon"
-import Submit from "./form/submit"
-import OrderLinesSummary from "./orderLinesSummary"
+import { OrderStatus } from "../../lib/common"
+import { OrderStepProps } from "../../lib/formCommon"
+import Submit from "../form/submit"
+import OrderLinesSummary from "../orderAdmin/orderLinesSummary"
 import OrderSummary from "./orderSummary"
 import DeliveryPreferences from './deliveryPreferences'
 

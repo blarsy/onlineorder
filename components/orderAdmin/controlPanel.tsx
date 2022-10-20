@@ -3,7 +3,7 @@ import { Tab, Tabs } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import * as yup from 'yup'
-import { ConnectionData } from '../lib/common'
+import { ConnectionData } from '../../lib/common'
 import OrdersFollowup from './ordersFollowup'
 import DataFiles from './dataFiles'
 

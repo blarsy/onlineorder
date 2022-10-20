@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 
-import DeliveryPreferenceInput from '../components/deliveryPreferenceInput'
+import DeliveryPreferenceInput from '../components/orderCreate/deliveryPreferenceInput'
 import { OrderData, DeliveryTimes, OrderStatus } from '../lib/common'
 
 export default {
