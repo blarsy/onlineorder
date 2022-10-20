@@ -5,6 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import * as yup from 'yup'
 import { ConnectionData } from '../../lib/common'
 import OrdersFollowup from './ordersFollowup'
+import CustomerLinks from './customerLinks'
 import DataFiles from './dataFiles'
 
 yup.setLocale({
@@ -29,6 +30,9 @@ const ControlPanel = ({connectionData}: Props) => {
         case 1:
             content = <OrdersFollowup />
             break
+        case 2:
+            content = <CustomerLinks />
+            break
         default:
     }
 
@@ -36,6 +40,7 @@ const ControlPanel = ({connectionData}: Props) => {
         <Tabs sx={{ mb: '1rem' }} value={currentTab} centered onChange={(event: React.SyntheticEvent, newValue: number) => setCurrentTab(newValue)} >
           <Tab label="Gérer les semaines" />
           <Tab label="Suivi commandes" />
+          <Tab label="Liens commande clients" />
         </Tabs>
         { content }
     </LocalizationProvider>
