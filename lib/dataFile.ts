@@ -1,7 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
-import { ProductData, CustomerData, NonLocalProductData } from './common'
-import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile } from './google'
+import { ProductData, CustomerData, NonLocalProductData, SalesCycle } from './common'
+import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile } from './google'
 import { create as createVolumesFile } from './volumesFile'
 
 
@@ -71,6 +71,22 @@ export const createDataFile = async (weekNumber: number, year: number, deadline:
     const result = await createRemoteFile(service, salesCycle, workingFileName, workingFolderName)
     await createVolumesFile(salesCycle)
     return result
+}
+
+export const updateCustomers = async() : Promise<void> => {
+  const docCustomersAndOther = await connectSpreadsheet(googleSheetIdCustomers)
+
+  const customers = await getCustomerData(docCustomersAndOther)
+  const currentContent = JSON.parse(await getDataFileContent()) as SalesCycle
+
+
+  await updateDataFile({ ...currentContent, ...{customers}})
+}
+
+const updateDataFile = async(newContent: SalesCycle): Promise<void> => {
+  const service = await connectDrive()
+  const file = await getDataFile(service)
+  updateFile(service, file!.id!, newContent)
 }
 
 const getDataFile = async(service: drive_v3.Drive): Promise<drive_v3.Schema$File | null> => {

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { OrderedVolumes } from "../../lib/common";
+import { handleException } from "../../lib/request";
 import { getOrderVolumes } from "../../lib/volumesFile";
 
 export default async function handler(
@@ -10,8 +11,8 @@ export default async function handler(
         try {
             const volumes = await getOrderVolumes()
             res.status(200).json(volumes)
-        } catch (e: any) {
-            res.status(500).json({ error: e.toString() })
+        } catch (e) {
+            handleException(e, res)
         }
     } else {
         res.status(501).end()

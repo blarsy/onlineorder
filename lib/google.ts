@@ -85,7 +85,7 @@ export const getOrCreateFolder = async (service: drive_v3.Drive, folderName: str
     return folder
 }
 
-export const updateFile = async (service: drive_v3.Drive, fileId: string, slug: string, parentFolderId: string, content: object): Promise<void> => {
+export const updateFile = async (service: drive_v3.Drive, fileId: string, content: object): Promise<void> => {
     const res = await service.files.update({
         fileId: fileId,
         media:{

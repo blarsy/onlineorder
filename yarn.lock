@@ -2134,6 +2134,20 @@
     prop-types "^15.8.1"
     react-is "^18.2.0"
 
+"@mui/base@5.0.0-alpha.102":
+  version "5.0.0-alpha.102"
+  resolved "https://registry.yarnpkg.com/@mui/base/-/base-5.0.0-alpha.102.tgz#53b07d0b73d3afe1d2a3feb3b43c8188bb821796"
+  integrity sha512-5e/qAIP+DlkrZxIt/cwnDw/A3ii22WkoEoWKHyu4+oeGs3/1Flh7qLaN4h5EAIBB9TvTEZEUzvmsTInmIj6ghg==
+  dependencies:
+    "@babel/runtime" "^7.19.0"
+    "@emotion/is-prop-valid" "^1.2.0"
+    "@mui/types" "^7.2.0"
+    "@mui/utils" "^5.10.9"
+    "@popperjs/core" "^2.11.6"
+    clsx "^1.2.1"
+    prop-types "^15.8.1"
+    react-is "^18.2.0"
+
 "@mui/core-downloads-tracker@^5.10.8":
   version "5.10.8"
   resolved "https://registry.yarnpkg.com/@mui/core-downloads-tracker/-/core-downloads-tracker-5.10.8.tgz#b00402dd0796e7e99a09cfc23cb0b0a6196c8e09"
@@ -2145,6 +2159,20 @@
   integrity sha512-sqClXdEM39WKQJOQ0ZCPTptaZgqwibhj2EFV9N0v7BU1PO8y4OcX/a2wIQHn4fNuDjIZktJIBrmU23h7aqlGgg==
   dependencies:
     "@babel/runtime" "^7.19.0"
+
+"@mui/lab@^5.0.0-alpha.104":
+  version "5.0.0-alpha.104"
+  resolved "https://registry.yarnpkg.com/@mui/lab/-/lab-5.0.0-alpha.104.tgz#8d2f0c6f87de1ccb72dd29c8f5eb23ee99dfbe76"
+  integrity sha512-mABdzB/cw5IXtCj2B4oggsXkfLvHg73ujZfErtKP4Sj7L6Fzy+rQceBGjv84UFBkqMvv9zm1UUchI3HfEj/lUw==
+  dependencies:
+    "@babel/runtime" "^7.19.0"
+    "@mui/base" "5.0.0-alpha.102"
+    "@mui/system" "^5.10.10"
+    "@mui/types" "^7.2.0"
+    "@mui/utils" "^5.10.9"
+    clsx "^1.2.1"
+    prop-types "^15.8.1"
+    react-is "^18.2.0"
 
 "@mui/material@^5.10.8":
   version "5.10.8"
@@ -2192,6 +2220,20 @@
     csstype "^3.1.1"
     prop-types "^15.8.1"
 
+"@mui/system@^5.10.10", "@mui/system@^5.4.1":
+  version "5.10.10"
+  resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.10.10.tgz#fbc34f29a3b62268c3d2b2be92819a35fc52de90"
+  integrity sha512-TXwtKN0adKpBrZmO+eilQWoPf2veh050HLYrN78Kps9OhlvO70v/2Kya0+mORFhu9yhpAwjHXO8JII/R4a5ZLA==
+  dependencies:
+    "@babel/runtime" "^7.19.0"
+    "@mui/private-theming" "^5.10.9"
+    "@mui/styled-engine" "^5.10.8"
+    "@mui/types" "^7.2.0"
+    "@mui/utils" "^5.10.9"
+    clsx "^1.2.1"
+    csstype "^3.1.1"
+    prop-types "^15.8.1"
+
 "@mui/system@^5.10.8":
   version "5.10.8"
   resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.10.8.tgz#afea52aeed34bd2d98c993322b5b09585106953d"
@@ -2202,20 +2244,6 @@
     "@mui/styled-engine" "^5.10.8"
     "@mui/types" "^7.2.0"
     "@mui/utils" "^5.10.6"
-    clsx "^1.2.1"
-    csstype "^3.1.1"
-    prop-types "^15.8.1"
-
-"@mui/system@^5.4.1":
-  version "5.10.10"
-  resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.10.10.tgz#fbc34f29a3b62268c3d2b2be92819a35fc52de90"
-  integrity sha512-TXwtKN0adKpBrZmO+eilQWoPf2veh050HLYrN78Kps9OhlvO70v/2Kya0+mORFhu9yhpAwjHXO8JII/R4a5ZLA==
-  dependencies:
-    "@babel/runtime" "^7.19.0"
-    "@mui/private-theming" "^5.10.9"
-    "@mui/styled-engine" "^5.10.8"
-    "@mui/types" "^7.2.0"
-    "@mui/utils" "^5.10.9"
     clsx "^1.2.1"
     csstype "^3.1.1"
     prop-types "^15.8.1"

@@ -1,4 +1,7 @@
-import { Box, Button, Chip, Stack, TextField, Typography } from '@mui/material'
+import { Box, Button, Stack, TextField, Typography, Alert } from '@mui/material'
+import PeopleAlt from '@mui/icons-material/PeopleAlt'
+import Storefront from '@mui/icons-material/Storefront'
+import { LoadingButton } from '@mui/lab'
 import { DateTimePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState } from 'react'
@@ -44,6 +47,8 @@ const DataFiles = ({ connectionData } : Props) => {
         initial: true,
         fileContent: null as object | null
     })
+    const [updatingProducts, setUpdatingProducts] = useState({ working: false, error: '' })
+    const [updatingCustomers, setUpdatingCustomers] = useState({ working: false, error: '' })
 
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
         <Formik
@@ -128,6 +133,18 @@ const DataFiles = ({ connectionData } : Props) => {
     <Loader loading={loadFileStatus.loading} error={loadFileStatus.error} initial={loadFileStatus.initial}>
         <JSONTree data={loadFileStatus.fileContent} />
     </Loader>
+    <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
+        setUpdatingCustomers({ working: true, error: '' })
+        try{
+            const message = new Date().toISOString()
+            const signature = await connectionData.signer?.signMessage(message)
+            await axios.patch('/api/orderweek', { message, signature, customers: 1 })
+            setUpdatingCustomers({ working: false, error: '' })
+        } catch(e: any) {
+            setUpdatingCustomers({ working: false, error: e.toString() })
+        }
+    }} >Mettre à jour les clients</LoadingButton>
+    { updatingCustomers.error && <Alert severity='error'>{updatingCustomers.error}</Alert>}
 </Box>
 }
 
