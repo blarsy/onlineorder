@@ -55,14 +55,13 @@ export const create = async (salesCycle: SalesCycle):Promise<void> => {
 export const registerOrderQuantities = async (order: OrderData, customerSlug: string): Promise<void> => {
     const service = await connectDrive()
     const fileId = await getVolumesFileId()
-    const workingFolder = await getWorkingFolder(service, workingFolderName)
 
     await acquireLock()
     try {
         let content = JSON.parse(await getFileContent(service, fileId)) as OrderedVolumes
         content = handleOrderedVolumes(order, content, customerSlug)
 
-        await updateFile(service, fileId, customerSlug, workingFolder.id!, content)
+        await updateFile(service, fileId, content)
     } finally {
         releaseLock()
     }
