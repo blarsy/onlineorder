@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "e2e": "NODE_ENV=test export NODE_ENV; next start",
     "lint": "next lint",
     "test": "jest",
     "storybook": "start-storybook -p 6006",
