@@ -1,6 +1,6 @@
 import { OrderCustomer, OrderData, OrderStatus, SalesCycle, CustomerData } from "./common";
 import { getDataFileContent } from "./dataFile";
-import { connectDrive, createOrReplaceFile, getOrCreateFolder, getWorkingFolder, getFileContent, getFileId, getOrdersInFolder } from "./google"
+import { connectDrive, createOrReplaceOrderFile, getOrCreateFolder, getWorkingFolder, getFileContent, getFileId, getOrdersInFolder } from "./google"
 import { registerOrderQuantities } from "./volumesFile";
 
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
@@ -24,7 +24,7 @@ export const saveOrder = async (order : OrderData, customerSlug: string, weekNum
         await registerOrderQuantities(order, customerSlug)
     }
 
-    await createOrReplaceFile(service, customerSlug, weekFolder.id!, order!)
+    await createOrReplaceOrderFile(service, customerSlug, weekFolder.id!, order!)
     return order
 }
 

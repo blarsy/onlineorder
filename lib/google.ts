@@ -94,7 +94,7 @@ export const updateFile = async (service: drive_v3.Drive, fileId: string, conten
       })
 }
 
-export const createOrReplaceFile = async (service: drive_v3.Drive, slug: string, parentFolderId: string, content: object): Promise<void> => {
+export const createOrReplaceOrderFile = async (service: drive_v3.Drive, slug: string, parentFolderId: string, content: object): Promise<void> => {
     const existingFileId = await getFileId(service, slug + '.json', parentFolderId)
     let res
     if (existingFileId) {
@@ -140,7 +140,7 @@ export const getFileContent = async (service: drive_v3.Drive, fileId: string):Pr
 export const getFileId = async (service: drive_v3.Drive, name: string, parentFolderId: string): Promise<string> => {
     const res = await service.files.list({
         q: `name = '${name}' and '${parentFolderId}' in parents`,
-        fields: 'files(id, name)',
+        fields: 'files(id)',
         spaces: 'drive',
     })
     if (res.data?.files?.length === 1) {
@@ -150,7 +150,7 @@ export const getFileId = async (service: drive_v3.Drive, name: string, parentFol
     }
 }
 
-export const archiveFile = async (service: drive_v3.Drive, fileId: string, archivePrefix: string, parentFolderId: string) => {
+const archiveFile = async (service: drive_v3.Drive, fileId: string, archivePrefix: string, parentFolderId: string) => {
     await service.files.copy({
         fileId,
         requestBody: {

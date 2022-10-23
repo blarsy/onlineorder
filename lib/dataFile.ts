@@ -1,7 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
 import { ProductData, CustomerData, NonLocalProductData, SalesCycle } from './common'
-import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile } from './google'
+import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { create as createVolumesFile } from './volumesFile'
 
 
@@ -85,44 +85,25 @@ export const updateCustomers = async() : Promise<void> => {
 
 const updateDataFile = async(newContent: SalesCycle): Promise<void> => {
   const service = await connectDrive()
-  const file = await getDataFile(service)
-  updateFile(service, file!.id!, newContent)
+  const fileId = await getDataFileId(service)
+  updateFile(service, fileId, newContent)
 }
 
-const getDataFile = async(service: drive_v3.Drive): Promise<drive_v3.Schema$File | null> => {
+const getDataFileId = async(service: drive_v3.Drive): Promise<string> => {
   const workingFolder = await getWorkingFolder(service, workingFolderName)
-  const res = await service.files.list({
-    q: `name = '${workingFileName}' and '${workingFolder.id!}' in parents`,
-    fields: 'files(id, name)',
-    spaces: 'drive',
-  })
-  if (res.data?.files?.length === 1) {
-    return res.data!.files![0]
-  } else {
-    return null
-  }
+
+  return await getFileId(service, workingFileName, workingFolder.id!)
 }
 
 export const getDataFileContent = async (): Promise<string> => {
   const service = await connectDrive()
-  const dataFile = await getDataFile(service)
+  const dataFileId = await getDataFileId(service)
   
-  if(!dataFile){
+  if(!dataFileId){
     throw new Error(`Remote working file ${workingFileName} not found`)
   }
 
-  const fileWithContent = await service.files.get({
-    fileId: dataFile.id!, 
-    alt:'media'
-  }, {responseType: 'stream'})
-  return new Promise((resolve, reject) => {
-    let content = ''
-    fileWithContent.data.on('end', () => {
-      resolve(content)
-    })
-    fileWithContent.data.on('data', data => content += data)
-    fileWithContent.data.on('error', e => reject(e))
-  })
+  return getFileContent(service, dataFileId!)
 }
 
 const getNonLocalProducts = async (doc: GoogleSpreadsheet): Promise<NonLocalProductData[]>  => {
