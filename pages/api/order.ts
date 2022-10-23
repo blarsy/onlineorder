@@ -13,8 +13,8 @@ export default async function handler(
             if(!orderData) {
                 res.status(500).json({ error: 'Order data must be present, and must contain order data.' })
             }
-            await saveOrder(orderData, req.body.slug, Number(req.body.targetWeek.weekNumber), Number(req.body.targetWeek.year))
-            res.status(200).json(null)
+            const savedOrder = await saveOrder(orderData, req.body.slug, Number(req.body.targetWeek.weekNumber), Number(req.body.targetWeek.year))
+            res.status(200).json(savedOrder)
         } catch(e) {
             handleException(e, res)
         }

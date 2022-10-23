@@ -1,14 +1,13 @@
 import { OrderCustomer, OrderData, OrderStatus, SalesCycle, CustomerData } from "./common";
 import { getDataFileContent } from "./dataFile";
 import { connectDrive, createOrReplaceFile, getOrCreateFolder, getWorkingFolder, getFileContent, getFileId, getOrdersInFolder } from "./google"
-import { ordersIdentical } from "./orderVolumes";
 import { registerOrderQuantities } from "./volumesFile";
 
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
 
 const weekFileName = (weekNumber: number, year: number) => `${year}-${weekNumber}`
 
-export const saveOrder = async (order : OrderData, customerSlug: string, weekNumber: number, year: number): Promise<void> => {
+export const saveOrder = async (order : OrderData, customerSlug: string, weekNumber: number, year: number): Promise<OrderData> => {
     const service = await connectDrive()
     const workingFolder = await getWorkingFolder(service, workingFolderName)
     const weekFolder = await getOrCreateFolder(service, weekFileName(weekNumber, year), workingFolder.id!)
@@ -16,11 +15,17 @@ export const saveOrder = async (order : OrderData, customerSlug: string, weekNum
     order.slug = customerSlug
 
     if(order && order.status === OrderStatus.confirmed && !order.confirmationDateTime) {
-        order.confirmationDateTime = new Date()
+        const confirmationTime = new Date()
+        order.confirmationDateTime = confirmationTime
+        const salesCycle = JSON.parse(await getDataFileContent())
+        if(new Date(salesCycle.deadline) < confirmationTime) {
+            order.status = OrderStatus.tooLate
+        }
         await registerOrderQuantities(order, customerSlug)
     }
 
     await createOrReplaceFile(service, customerSlug, weekFolder.id!, order!)
+    return order
 }
 
 export const getOrder = async (weekNumber: number, year: number, slug: string): Promise<{order: OrderData, fileId: string} | null> => {

@@ -27,7 +27,8 @@ export interface NonLocalProductData {
 
 export enum OrderStatus {
     draft = 'Draft',
-    confirmed = 'Confirmed'
+    confirmed = 'Confirmed',
+    tooLate = 'tooLate'
 }
 
 export enum DeliveryTimes {

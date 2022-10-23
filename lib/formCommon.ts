@@ -57,3 +57,9 @@ export const getOrderTotal = (order: OrderData, enrichedSalesCycle: EnrichedSale
   const totalHtva = totalProductsHtva + totalNonLocalProductsHtva
   return { totalHtva, tva: totalHtva * VATFOOD }
 }
+
+export const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
+  // dates come as ISO strings from Api, but we want them typed as Dates
+  orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
+  return orderFromApi
+}

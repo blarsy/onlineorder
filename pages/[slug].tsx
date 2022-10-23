@@ -8,12 +8,7 @@ import Loader from '../components/form/loader'
 import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
 import { Stack, Alert } from '@mui/material'
 import CustomerHeader from '../components/orderCreate/customerHeader'
-
-const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
-    // dates come as ISO strings from Api, but we want them typed as Dates
-    orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
-    return orderFromApi
-}
+import { easyDateTime, orderFromApiCallResult } from '../lib/formCommon'
 
 const Order = () => {
     const router = useRouter()
@@ -70,6 +65,13 @@ const Order = () => {
     if(salesCycleState.customer) {
         if (salesCycleState.customer.order?.status === OrderStatus.confirmed) {
             content = <Alert severity="success">Commande enregistrée ! Merci et à bientôt pour la livraison.</Alert>
+        } else if (salesCycleState.customer.order?.status === OrderStatus.tooLate) {
+            const confirmationTime = new Date(salesCycleState.customer.order!.confirmationDateTime!)
+            if(confirmationTime < new Date(salesCycleState.enrichedSalesCycle!.salesCycle.deadline!.valueOf() + 1000 * 60 * 60)){
+                content = <Alert severity="warning">Commande NON confirmée, car enregistrée à {easyDateTime(confirmationTime)}, donc moins d&apos;une heure après la clôture des commandes. Si vous n&apos;avez pas de confirmation de commande de notre part aujourd&apos;hui, veuillez considérer votre commande refusée.</Alert>
+            } else {
+                content = <Alert severity="error">Désolé, nous devons refuser votre commande: elle à été confirmée à {easyDateTime(confirmationTime)}, donc après la clôture des commandes.</Alert>
+            }
         } else if (salesCycleState.enrichedSalesCycle && salesCycleState.enrichedSalesCycle.salesCycle.deadline < new Date()) {
             content = <Alert severity="error">Désolé, la période de commande est terminée depuis le {salesCycleState.enrichedSalesCycle.salesCycle.deadline.toLocaleDateString()} {salesCycleState.enrichedSalesCycle.salesCycle.deadline.toLocaleTimeString()}.</Alert>
         } else if (salesCycleState.customer.order?.status === OrderStatus.draft) {
