@@ -7,13 +7,14 @@ const makeOrder = (quantities: {
 }[], quantitiesNonLocal: {
     productId: number;
     quantity: number;
-}[]) => {
+}[]) : OrderData => {
     return {
         quantities,
         quantitiesNonLocal,
         status: OrderStatus.draft,
         note: '',
-        preferredDeliveryTimes: []  
+        preferredDeliveryTimes: [],
+        slug: 'slug'
     }
 }
 

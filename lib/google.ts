@@ -1,11 +1,17 @@
 import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
-import { google, drive_v3 } from 'googleapis'
+import { google, drive_v3, sheets_v4 } from 'googleapis'
 import { Readable } from 'stream'
 import { OrderData } from './common'
 
+
 const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
-const googlePrivateKey = JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey as string
+const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY ? JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey : '' as string
+
+export const getSheets = (providedGoogleServiceAccount?: string, providedGooglePrivateKey?: string) : sheets_v4.Sheets => {
+    const auth = new google.auth.JWT(providedGoogleServiceAccount || googleServiceAccount, undefined, providedGooglePrivateKey || googlePrivateKey, 'https://www.googleapis.com/auth/spreadsheets')
+    return google.sheets({version: 'v4', auth})
+}
 
 export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
     const doc = new GoogleSpreadsheet(sheetId)

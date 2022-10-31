@@ -29,6 +29,10 @@ interface Values {
     deadline: Date
 }
 
+interface CreateQuantitiesSheetValues {
+    weekNumber: number
+}
+
 
 const findNextWeekdayTime = (weekday: number, hour: number) => {
     const now = new Date()
@@ -47,8 +51,8 @@ const DataFiles = ({ connectionData } : Props) => {
         initial: true,
         fileContent: null as object | null
     })
-    const [updatingProducts, setUpdatingProducts] = useState({ working: false, error: '' })
     const [updatingCustomers, setUpdatingCustomers] = useState({ working: false, error: '' })
+    const [createQuantitiesSheet, setCreateQuantitiesSheet] = useState({ working: false, error: ''})
 
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
         <Formik
@@ -120,32 +124,70 @@ const DataFiles = ({ connectionData } : Props) => {
         <Typography variant="body1" color="error"><ErrorMessage name="deadline" /></Typography>
         <Submit isSubmitting={isSubmitting} label="Générer nouveau fichier" submitError={creationError}/>
     </Stack>)}
-</Formik>
-    <Button onClick={async () => {
-        setLoadFileStatus({ loading: true, error: '', initial: loadFileStatus.initial, fileContent: null })
-        try {
-            const fileContentRes = await axios.get('/api/orderweek')
-            setLoadFileStatus({ loading: false, error: '', initial: false, fileContent: fileContentRes.data })
-        } catch(e) {
-            setLoadFileStatus({ loading: false, error: e as string, initial: loadFileStatus.initial, fileContent: null })
-        }
-    }}>Voir données actuelles</Button>
-    <Loader loading={loadFileStatus.loading} error={loadFileStatus.error} initial={loadFileStatus.initial}>
-        <JSONTree data={loadFileStatus.fileContent} />
-    </Loader>
-    <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
-        setUpdatingCustomers({ working: true, error: '' })
-        try{
-            const message = new Date().toISOString()
-            const signature = await connectionData.signer?.signMessage(message)
-            await axios.patch('/api/orderweek', { message, signature, customers: 1 })
-            setUpdatingCustomers({ working: false, error: '' })
-        } catch(e: any) {
-            setUpdatingCustomers({ working: false, error: e.toString() })
-        }
-    }} >Mettre à jour les clients</LoadingButton>
-    { updatingCustomers.error && <Alert severity='error'>{updatingCustomers.error}</Alert>}
-</Box>
+        </Formik>
+        <Formik
+            initialValues={{
+                weekNumber: getWeek(new Date())
+            }}
+            validationSchema={ yup.object({
+                weekNumber: yup.number().required().test((val, ctx) => {
+                    if(val) {
+                        if(!isCurrentOrNextWeekNumber(val)) {
+                            return ctx.createError({ message: 'Le numéro de semaine doit être celui de la semaine actuelle ou de celle d\'après'})
+                        }
+                    }
+                    return true
+                })
+            }) }
+            onSubmit={async (
+                values: CreateQuantitiesSheetValues
+            ) => {
+                try {
+                    setCreateQuantitiesSheet({ working: true, error: '' })
+                    const message = new Date().toUTCString()
+                    const signature = await connectionData.signer?.signMessage(message)
+                    await axios.put('/api/quantitiessheet', { message, signature, 
+                        weekNumber: values.weekNumber })
+                    setCreateQuantitiesSheet({ working: false, error: '' })
+                } catch (e) {
+                    setCreateQuantitiesSheet({ working: false, error: (e as Error).toString()})
+                }
+            }}
+        >
+    {({ isSubmitting, getFieldProps, errors, touched }) => (
+        <Stack component={Form} gap="1rem">
+            <TextField size="small" label="Numéro de semaine" 
+                id="weekNumber" error={touched.weekNumber && !!errors.weekNumber}
+                helperText={errors.weekNumber}
+                {...getFieldProps('weekNumber')}></TextField>
+            <Submit isSubmitting={isSubmitting} label="Nouvelle feuille de quantités" submitError={createQuantitiesSheet.error}/>
+        </Stack>)}
+        </Formik>
+        <Button onClick={async () => {
+            setLoadFileStatus({ loading: true, error: '', initial: loadFileStatus.initial, fileContent: null })
+            try {
+                const fileContentRes = await axios.get('/api/orderweek')
+                setLoadFileStatus({ loading: false, error: '', initial: false, fileContent: fileContentRes.data })
+            } catch(e) {
+                setLoadFileStatus({ loading: false, error: e as string, initial: loadFileStatus.initial, fileContent: null })
+            }
+        }}>Voir données actuelles</Button>
+        <Loader loading={loadFileStatus.loading} error={loadFileStatus.error} initial={loadFileStatus.initial}>
+            <JSONTree data={loadFileStatus.fileContent} />
+        </Loader>
+        <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
+            setUpdatingCustomers({ working: true, error: '' })
+            try{
+                const message = new Date().toISOString()
+                const signature = await connectionData.signer?.signMessage(message)
+                await axios.patch('/api/orderweek', { message, signature, customers: 1 })
+                setUpdatingCustomers({ working: false, error: '' })
+            } catch(e: any) {
+                setUpdatingCustomers({ working: false, error: e.toString() })
+            }
+        }} >Mettre à jour les clients</LoadingButton>
+        { updatingCustomers.error && <Alert severity='error'>{updatingCustomers.error}</Alert>}
+    </Box>
 }
 
 export default DataFiles
