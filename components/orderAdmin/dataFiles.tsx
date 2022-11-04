@@ -1,6 +1,5 @@
 import { Box, Button, Stack, TextField, Typography, Alert } from '@mui/material'
 import PeopleAlt from '@mui/icons-material/PeopleAlt'
-import Storefront from '@mui/icons-material/Storefront'
 import { LoadingButton } from '@mui/lab'
 import { DateTimePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
@@ -14,7 +13,7 @@ import {
     Form,
   } from 'formik'
 import * as yup from 'yup'
-import { isCurrentOrNextWeekNumber, getWeek } from '../../lib/dateWeek'
+import { addDays } from '../../lib/dateWeek'
 import Submit from '../form/submit'
 import '../../lib/formCommon'
 import { ConnectionData } from '../../lib/common'
@@ -24,19 +23,18 @@ interface Props {
 }
 
 interface Values {
-    weekNumber: number,
-    year: number,
+    delivery: Date,
     deadline: Date
 }
 
 interface CreateQuantitiesSheetValues {
-    weekNumber: number
+    delivery: Date
 }
 
 
 const findNextWeekdayTime = (weekday: number, hour: number) => {
     const now = new Date()
-    let refDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+    let refDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
     while(refDate.getDay() != weekday){
         refDate = new Date(1000 * 60 * 60 * 24 + refDate.valueOf())
     }
@@ -57,24 +55,14 @@ const DataFiles = ({ connectionData } : Props) => {
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
         <Formik
             initialValues={{
-                weekNumber: getWeek(new Date()),
-                year: new Date().getFullYear(),
+                delivery: findNextWeekdayTime(4, 12),
                 deadline: findNextWeekdayTime(2, 11)
             }}
             validationSchema={ yup.object({
-                weekNumber: yup.number().required().test((val, ctx) => {
+                delivery: yup.date().required().test((val, ctx) => {
                     if(val) {
-                        if(!isCurrentOrNextWeekNumber(val)) {
-                            return ctx.createError({ message: 'Le numéro de semaine doit être celui de la semaine actuelle ou de celle d\'après'})
-                        }
-                    }
-                    return true
-                }),
-                year: yup.number().required().test((val, ctx) => {
-                    if(val) {
-                        const currentYear = new Date().getFullYear()
-                        if(val != currentYear && val != currentYear +1) {
-                            return ctx.createError({ message: 'L\'année doit être l\'actuelle ou de celle d\'après'})
+                        if(val < new Date()) {
+                            return ctx.createError({ message: 'La date de livraison doit être dans le futur.'})
                         }
                     }
                     return true
@@ -86,7 +74,11 @@ const DataFiles = ({ connectionData } : Props) => {
                         }
                     }
                     return true
-                })
+                }).test('deadlineBeforeDelivery', 'La date de clôture des commandes doit avoir lieu avant la date de livraison.',
+                    function(val){
+                        return !!val && (val < this.parent.delivery)
+                    }
+                )
             }) }
             onSubmit={async (
                 values: Values
@@ -95,23 +87,25 @@ const DataFiles = ({ connectionData } : Props) => {
                     const message = new Date().toUTCString()
                     const signature = await connectionData.signer?.signMessage(message)
                     await axios.put('/api/orderweek', { message, signature, 
-                        weekNumber: values.weekNumber, year: values.year, deadline: values.deadline })
+                        delivery: values.delivery, deadline: values.deadline })
                     setCreationError('')
                 } catch (e) {
                     setCreationError((e as Error).toString())
                 }
             }}
         >
-    {({ isSubmitting, getFieldProps, errors, touched, setFieldValue, setTouched, values }) => (
+    {({ isSubmitting, touched, setFieldValue, setTouched, values }) => (
     <Stack component={Form} gap="1rem">
-        <TextField size="small" label="Numéro de semaine" 
-            id="weekNumber" error={touched.weekNumber && !!errors.weekNumber}
-            helperText={errors.weekNumber}
-            {...getFieldProps('weekNumber')}></TextField>
-        <TextField size="small" label="Année" 
-            id="year" error={touched.year && !!errors.year}
-            helperText={errors.year}
-            {...getFieldProps('year')}></TextField>
+        <DateTimePicker
+            label="Début livraisons"
+            onChange={(value) => {
+                setFieldValue('delivery', (value as Dayjs).toDate(), true)
+                setTouched({ ...touched, ...{ deadline: true } })
+            }}
+            value={dayjs(values.delivery)}
+            renderInput={(params) => <TextField {...params} />}
+        />
+        <Typography variant="body1" color="error"><ErrorMessage name="delivery" /></Typography>
         <DateTimePicker
             label="Clôture commandes"
             onChange={(value) => {
@@ -127,17 +121,17 @@ const DataFiles = ({ connectionData } : Props) => {
         </Formik>
         <Formik
             initialValues={{
-                weekNumber: getWeek(new Date())
+                delivery: addDays(new Date(), 5)
             }}
             validationSchema={ yup.object({
-                weekNumber: yup.number().required().test((val, ctx) => {
+                delivery: yup.date().required().test((val, ctx) => {
                     if(val) {
-                        if(!isCurrentOrNextWeekNumber(val)) {
-                            return ctx.createError({ message: 'Le numéro de semaine doit être celui de la semaine actuelle ou de celle d\'après'})
+                        if(val < new Date()) {
+                            return ctx.createError({ message: 'La date de livraison doit être dans le futur.'})
                         }
                     }
                     return true
-                })
+                }),
             }) }
             onSubmit={async (
                 values: CreateQuantitiesSheetValues
@@ -147,19 +141,25 @@ const DataFiles = ({ connectionData } : Props) => {
                     const message = new Date().toUTCString()
                     const signature = await connectionData.signer?.signMessage(message)
                     await axios.put('/api/quantitiessheet', { message, signature, 
-                        weekNumber: values.weekNumber })
+                        delivery: values.delivery })
                     setCreateQuantitiesSheet({ working: false, error: '' })
                 } catch (e) {
                     setCreateQuantitiesSheet({ working: false, error: (e as Error).toString()})
                 }
             }}
         >
-    {({ isSubmitting, getFieldProps, errors, touched }) => (
+    {({ isSubmitting, setFieldValue, setTouched, touched, values }) => (
         <Stack component={Form} gap="1rem">
-            <TextField size="small" label="Numéro de semaine" 
-                id="weekNumber" error={touched.weekNumber && !!errors.weekNumber}
-                helperText={errors.weekNumber}
-                {...getFieldProps('weekNumber')}></TextField>
+            <DateTimePicker
+                label="Début livraisons"
+                onChange={(value) => {
+                    setFieldValue('delivery', (value as Dayjs).toDate(), true)
+                    setTouched({ ...touched, ...{ deadline: true } })
+                }}
+                value={dayjs(values.delivery)}
+                renderInput={(params) => <TextField {...params} />}
+            />
+            <Typography variant="body1" color="error"><ErrorMessage name="delivery" /></Typography>
             <Submit isSubmitting={isSubmitting} label="Nouvelle feuille de quantités" submitError={createQuantitiesSheet.error}/>
         </Stack>)}
         </Formik>

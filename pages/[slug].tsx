@@ -5,7 +5,7 @@ import { CustomerData, DeliveryTimes, OrderData, OrderStatus } from '../lib/comm
 import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
 import EditOrder from '../components/orderCreate/editOrder'
 import Loader from '../components/form/loader'
-import { addDays, getDateOfISOWeek } from '../lib/dateWeek'
+import { addDays, getDateOfISOWeek, getWeek } from '../lib/dateWeek'
 import { Stack, Alert } from '@mui/material'
 import CustomerHeader from '../components/orderCreate/customerHeader'
 import { easyDateTime, orderFromApiCallResult } from '../lib/formCommon'
@@ -40,14 +40,14 @@ const Order = () => {
                 if(!customer){
                     setSalesCycleState({ loading: false, error: `Ce numéro de client n'existe pas`, enrichedSalesCycle: null, customer: null})
                 } else {
-                    const res = await axios.get(`./api/order?weeknumber=${enrichedSalesCycle.salesCycle.targetWeek.weekNumber}&year=${enrichedSalesCycle.salesCycle.targetWeek.year}&slug=${slug}`)
+                    const res = await axios.get(`./api/order?delivery=${enrichedSalesCycle.salesCycle.deliveryDate.toISOString()}&slug=${slug}`)
                     if(res.status != 200) {
                         setSalesCycleState({ loading: false, error: `Erreur pendant le chargement de la commande : ${res.statusText}`, enrichedSalesCycle: null, customer: null})
                     } else {
                         if(res.data) {
                             customer.order = orderFromApiCallResult(res.data)
                         } else {
-                            customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.targetWeek.weekNumber, enrichedSalesCycle.salesCycle.targetWeek.year, customer.slug)
+                            customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.deliveryDate, customer.slug)
                         }
                         setSalesCycleState({ loading: false, error: '', enrichedSalesCycle, customer })
                     }
@@ -99,8 +99,9 @@ const Order = () => {
 
 export default Order
 
-function createOrderWithDefaults(weekNumber: number, year: number, slug: string): OrderData {
-    const mondayOfTargetWeek = getDateOfISOWeek(weekNumber, year)
+function createOrderWithDefaults(deliveryDate: Date, slug: string): OrderData {
+    const year = deliveryDate.getFullYear()
+    const mondayOfTargetWeek = getDateOfISOWeek(getWeek(deliveryDate), year)
     const thursdayOfTargetWeek = addDays(mondayOfTargetWeek, 3)
     const fridayOfTargetWeek = addDays(mondayOfTargetWeek, 4)
 

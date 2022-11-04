@@ -45,7 +45,7 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepP
                         }
                     }
                 })
-                const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
+                const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
                 if(error) {
                     setSaveQuantitiesError(error)
                 } else {

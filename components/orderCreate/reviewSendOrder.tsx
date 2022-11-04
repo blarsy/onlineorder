@@ -32,7 +32,7 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCusto
             customer.order!.note = values['note']
             customer.order!.status = OrderStatus.confirmed
             try {
-                const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
+                const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
                 if(error) {
                     customer.order!.status = OrderStatus.draft
                     setConfirmError(error)

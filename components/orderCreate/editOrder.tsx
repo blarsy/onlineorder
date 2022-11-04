@@ -25,13 +25,10 @@ const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer, refreshQuantit
         await refreshQuantities()
     }
 
-    const saveOrder = async ( customer: CustomerData, targetWeek: {
-        weekNumber: number,
-        year: number
-    }) : Promise<string> => {
+    const saveOrder = async ( customer: CustomerData, delivery: Date) : Promise<string> => {
         const res = await axios.put('/api/order', {
             slug: customer.slug,
-            targetWeek,
+            delivery,
             order: customer.order
         })
         if(res.status != 200) {

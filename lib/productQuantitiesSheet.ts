@@ -1,8 +1,7 @@
+import { getWeek } from './dateWeek'
 import { getSheets } from './google'
-import { getProducers, getProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
-
-const googleSheetIdProducts = process.env.GOOGLE_SHEET_ID_PRODUCTS!
-const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
+import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
+import config from './serverConfig'
 
 interface ProductQuantities {
     [productId: number]:{
@@ -13,7 +12,7 @@ interface ProductQuantities {
 }
 
 interface AvailableProductsSnapshot {
-    weekNumber: number,
+    delivery: Date,
     productQuantities: ProductQuantities,
     productQuantitiesPlannedCrops: ProductQuantities
 }
@@ -27,19 +26,19 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
-export const createBlankQuantitiesSheet = async (weekNumber:number) => {
+export const createBlankQuantitiesSheet = async (delivery: Date) => {
     const sheetId = await createNewSheet(
-        googleSheetIdProducts, 
+        config.googleSheetIdProducts, 
         'Disponibilités semaine prochaine',
         { gridProperties: { columnCount: 50 } })
-    await createProductsSheet(googleSheetIdProducts, 
-        sheetId, weekNumber, 
-        ['bertrand.larsy@gmail.com', googleServiceAccount])
+    await createProductsSheet(config.googleSheetIdProducts, 
+        sheetId, delivery, 
+        ['bertrand.larsy@gmail.com', config.googleServiceAccount])
 }
 
 
-export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, additionalSheetProps: object, googleServiceAccount?: string, googlePrivateKey?: string): Promise<number> => {
-    const sheets = getSheets(googleServiceAccount, googlePrivateKey)
+export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, additionalSheetProps: object): Promise<number> => {
+    const sheets = getSheets()
     let num = 1
     let currentTitle = sheetTitle
 
@@ -70,7 +69,7 @@ export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, a
 
 const getProductSheetInput =  async (): Promise<ProductSheetInput> => {
     const producersByCategory = await getProducers()
-    const products = await getProductsByCategories()
+    const products = await getLocalProductsByCategories()
     const numberOfProducts = Object.keys(products).reduce((acc, cat) => acc += products[cat].length, 0) - 1
     return {
         firstDataRow: 4,
@@ -81,7 +80,18 @@ const getProductSheetInput =  async (): Promise<ProductSheetInput> => {
     }
 }
 
-export const createProductsSheet = async (spreadsheetId: string, sheetId: number, weekNumber: number, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot, googleServiceAccount?: string, googlePrivateKey?: string) => {
+const toSheetDate = (date : Date): number => {
+    const refDate = new Date(1899, 11, 30, 0, 0, 0, 0).getTime()
+    const millisecondsInADay = 1000 * 60 * 60 * 24
+    return (date.getTime() - refDate) / millisecondsInADay
+}
+const fromSheetDate = (num : number): Date => {
+    const refDate = new Date(1899, 11, 30, 0, 0, 0, 0).getTime()
+    const millisecondsInADay = 1000 * 60 * 60 * 24
+    return new Date(num * millisecondsInADay + refDate)
+}
+
+export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
     const productSheetInput = await getProductSheetInput()
     const products = productSheetInput.products
     const numberOfProducts = productSheetInput.numberOfProducts
@@ -107,14 +117,40 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                         product.id, productSheetInput.producers, 
                         productSheetInput.producersWithPlannedCrops)
                 }
-                return [product.id, cat, product.name, product.unit, product.margin, product.price, ...initialProductQuantities]
+                const margin = (product.sellPrice - product.price) / product.price
+                return [product.id, cat, product.name, product.unit,  margin, product.price, ...initialProductQuantities]
             }))
     })
  
-    const sheets = getSheets(googleServiceAccount, googlePrivateKey)
+    const sheets = getSheets()
 
     const targetSheet = (await sheets.spreadsheets.get({ 
         spreadsheetId })).data.sheets?.find(sheet => sheet.properties?.sheetId === sheetId)
+
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [{
+                // define a date format for the cell that will receive the delivery date
+                repeatCell: {
+                    range: {
+                        sheetId,
+                        startRowIndex: 0, endRowIndex: 1,
+                        startColumnIndex: 3, endColumnIndex: 4
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'DATE',
+                                pattern: 'dd/MM/yyy hh:mm'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat(type, pattern)'
+                }
+            }]
+        }
+    })
     
     await sheets.spreadsheets.values.batchUpdate({ 
         spreadsheetId, 
@@ -129,6 +165,9 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                 },{
                     range: `${targetSheet?.properties?.title}!A${firstDataRow - 1}:${getA1Notation(firstDataRow - 1, lastHeaderCol)}`,
                     values: [colTitles]
+                }, {
+                    range: `${targetSheet?.properties?.title}!C1:E1`,
+                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}` ]]
                 }
             ]
         }
@@ -177,7 +216,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                             startRowIndex: 0,
                             endRowIndex: 1,
                             startColumnIndex: 1,
-                            endColumnIndex: 2
+                            endColumnIndex: 4
                         },
                         cell: {
                             userEnteredFormat: {
@@ -186,36 +225,9 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                                     bold: true,
                                     fontSize: 18
                                 }
-                            },
-                            userEnteredValue: {
-                                stringValue: 'Quantités pour la semaine '
                             }
                         },
-                        fields: 'userEnteredValue.stringValue,userEnteredFormat(horizontalAlignment, textFormat(bold, fontSize))'
-                    },
-                },
-                {
-                    repeatCell: {
-                        range: {
-                            sheetId,
-                            startRowIndex: 0,
-                            endRowIndex: 1,
-                            startColumnIndex: productColHeaders.length - 1,
-                            endColumnIndex: productColHeaders.length
-                        },
-                        cell: {
-                            userEnteredFormat: {
-                                horizontalAlignment: 'LEFT',
-                                textFormat: {
-                                    bold: true,
-                                    fontSize: 18
-                                }
-                            },
-                            userEnteredValue: {
-                                numberValue: weekNumber
-                            }
-                        },
-                        fields: 'userEnteredValue.numberValue,userEnteredFormat(horizontalAlignment, textFormat(bold, fontSize))'
+                        fields: 'userEnteredFormat(horizontalAlignment, textFormat(bold, fontSize))'
                     },
                 },
                 {
@@ -289,7 +301,8 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                         range: {
                             sheetId,
                             startColumnIndex: productColHeaders.length + productSheetInput.producers.length,
-                            endColumnIndex: productColHeaders.length + productSheetInput.producers.length + 1
+                            endColumnIndex: productColHeaders.length + productSheetInput.producers.length + 1,
+                            startRowIndex: 0, endRowIndex: lastProductRow
                         },
                         cell: {
                             userEnteredFormat: {
@@ -372,18 +385,6 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                                 }
                             }
                         }
-                    }
-                },
-                {
-                    mergeCells: {
-                        range: {
-                            sheetId,
-                            startRowIndex: 0,
-                            endRowIndex: 1,
-                            startColumnIndex: 1,
-                            endColumnIndex: productColHeaders.length - 1
-                        },
-                        mergeType: "MERGE_ALL"
                     }
                 },
                 {
@@ -514,8 +515,8 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     })
 }
 
-export const parseProductSheet = async (spreadsheetId: string, sheetName: string, googleServiceAccount?: string, googlePrivateKey?: string): Promise<AvailableProductsSnapshot> => {
-    const sheets = await getSheets(googleServiceAccount, googlePrivateKey)
+export const parseProductSheet = async (spreadsheetId: string, sheetName: string): Promise<AvailableProductsSnapshot> => {
+    const sheets = await getSheets()
     const productSheetInput = await getProductSheetInput()
     const spreadSheet = await sheets.spreadsheets.get({ spreadsheetId })
     const sheet = await spreadSheet.data.sheets?.find(sheet => sheet.properties?.title === sheetName)
@@ -527,7 +528,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
                     sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length,
                     endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
-                    endRowIndex: productSheetInput.firstDataRow + productSheetInput.numberOfProducts
+                    endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
                 }
             },{
                 // raw quantities data for planned crops
@@ -535,7 +536,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
                     sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
                     endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
-                    endRowIndex: productSheetInput.firstDataRow + productSheetInput.numberOfProducts
+                    endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
                 }
             }, {
                 // column containing the product ids
@@ -543,7 +544,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
                     sheetId: sheet?.properties?.sheetId, startColumnIndex: 0,
                     endColumnIndex: 1,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
-                    endRowIndex: productSheetInput.firstDataRow + productSheetInput.numberOfProducts
+                    endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
                 }
             }, {
                 // row containing the producer ids
@@ -562,10 +563,10 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
                     endRowIndex: productSheetInput.firstDataRow - 2
                 }
             }, {
-                // Cell containing the week number
+                // Cell containing delivery date
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length - 1,
-                    endColumnIndex: productSheetInput.productColHeaders.length,
+                    sheetId: sheet?.properties?.sheetId, startColumnIndex: 3,
+                    endColumnIndex: 4,
                     startRowIndex: 0, 
                     endRowIndex: 1
                 }
@@ -573,8 +574,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
             includeGridData: true,
         }
     })
-    const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, weekNumber] = res.data.sheets![0].data!
-
+    const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, deliveryDate] = res.data.sheets![0].data!
     const productQuantities = {} as ProductQuantities
 
     rawQuantities.rowData?.forEach((row, idx) => {
@@ -607,8 +607,9 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
         })
     })
 
-    return { productQuantities, productQuantitiesPlannedCrops,
-        weekNumber: weekNumber.rowData![0].values![0].userEnteredValue!.numberValue!}
+    const result = { productQuantities, productQuantitiesPlannedCrops,
+        delivery: fromSheetDate(deliveryDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
+    return result
 }
 
 const getA1Notation = (row: number, column: number):string => {
@@ -621,17 +622,6 @@ const getA1Notation = (row: number, column: number):string => {
     }
     return a1Notation.join('');
 }
-
-// export const logSheetInfo = async (spreadsheetId: string) => {
-//     const sheets = getSheets()
-//     const result = await sheets.spreadsheets.get({
-//         spreadsheetId
-//     })
-//     const conditionalFormat = result.data.sheets?.find(sheet => sheet.properties?.sheetId === 401162973)?.conditionalFormats
-//     if(conditionalFormat!.length > 0) {
-//         console.log(conditionalFormat![0].booleanRule?.format?.backgroundColor)
-//     }
-// }
 
 const makeProductQuantitiesLine = (initialProductQuantities: (number | string | null)[], initialQuantities: AvailableProductsSnapshot, productId: number, producers: OdooProducer[], producersWithPlannedCrops: OdooProducer[]) => {
     if(initialQuantities.productQuantities[productId]) {

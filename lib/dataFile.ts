@@ -2,39 +2,10 @@ import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
 import { ProductData, CustomerData, NonLocalProductData, SalesCycle } from './common'
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
+import { getProductsForOnlineOrdering } from './odoo'
+import { parseProductSheet } from './productQuantitiesSheet'
 import { create as createVolumesFile } from './volumesFile'
-
-
-const googleSheetIdProducts = process.env.GOOGLE_SHEET_ID_PRODUCTS!
-const googleSheetIdCustomers = process.env.GOOGLE_SHEET_ID_CUSTOMERS!
-const workingFileName = process.env.WORKING_FILE_NAME!
-const workingFolderName = process.env.WORKING_FOLDER_NAME!
-
-let id = 0
-const nextId = () => {
-  id ++
-  return id
-}
-
-const getProductData = async(doc: GoogleSpreadsheet):Promise<ProductData[]> => {
-    const sheet = doc.sheetsByTitle['Produits']
-    await sheet.loadCells()
-    
-    const availableProducts = [] as ProductData[]
-    let i = 0, name = 'dummy', category, price, unit, quantity, quantityPerSmallCrate : number | undefined, quantityPerBigCrate : number | undefined
-    while(name) {
-        category = sheet.getCell(i, 0).value as string
-        name = sheet.getCell(i, 1).value as string
-        unit = sheet.getCell(i, 2).value as string
-        quantity = sheet.getCell(i, 3).value as number
-        price = sheet.getCell(i, 4).value as number
-        if(name && quantity > 0) {
-          availableProducts.push({id: nextId(), name, category, quantity, price, unit, quantityPerSmallCrate, quantityPerBigCrate})
-        }
-        i ++
-    }
-    return availableProducts
-}
+import config from './serverConfig'
 
 const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> => {
     const sheet = doc.sheetsByTitle['Clients']
@@ -56,25 +27,68 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
     return customers
 }
 
-export const createDataFile = async (weekNumber: number, year: number, deadline: Date): Promise<drive_v3.Schema$File> => {
-    const docProducts = await connectSpreadsheet(googleSheetIdProducts)
-    const docCustomersAndOther = await connectSpreadsheet(googleSheetIdCustomers)
+export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetTitle: string): Promise<drive_v3.Schema$File> => {
+    const customerSheetId = config.googleSheetIdCustomers
+    const docCustomersAndOther = await connectSpreadsheet(customerSheetId)
 
-    const products = await getProductData(docProducts)
-    const nonLocalProducts = await getNonLocalProducts(docCustomersAndOther)
     const customers = await getCustomerData(docCustomersAndOther)
+    const quantitiesData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetTitle)
+    const productsByCategories = await getProductsForOnlineOrdering()
+    const nonLocalProductsPackagings = await getNonLocalProductsPackaging(docCustomersAndOther)
+    const products = [] as ProductData[]
+    const nonLocalProducts = [] as NonLocalProductData[]
+
+    Object.keys(productsByCategories).forEach(cat => {
+      if(cat.endsWith(' hors coopérative')) {
+        productsByCategories[cat].forEach(product => {
+          if(nonLocalProductsPackagings[product.id]){
+            const targetCategory = cat.substring(0, cat.length - ' hors coopérative'.length)
+
+            nonLocalProducts.push({
+              category: targetCategory,
+              id: product.id,
+              name: product.name,
+              price: product.sellPrice,
+              unit: product.unit,
+              packaging: nonLocalProductsPackagings[product.id]
+            })
+          }
+        })
+      } else {
+        productsByCategories[cat].forEach(product => {
+          const producerQuantities = quantitiesData.productQuantities[product.id] ? quantitiesData.productQuantities[product.id].producerQuantities : {}
+          const plannedCropsQuantities = quantitiesData.productQuantitiesPlannedCrops[product.id] ? quantitiesData.productQuantitiesPlannedCrops[product.id].producerQuantities : {}
+
+          const quantity = Object.keys(producerQuantities).reduce<number>((acc, producerId) => 
+            acc + (typeof producerQuantities[Number(producerId)] === 'number' ? producerQuantities[Number(producerId)] as number : 0), 0) +
+            Object.keys(plannedCropsQuantities).reduce((acc, producerId) => 
+            acc + (typeof plannedCropsQuantities[Number(producerId)] === 'number' ? plannedCropsQuantities[Number(producerId)] as number : 0), 0)
+
+          if(quantity > 0) {
+            products.push({
+              category: cat,
+              id: product.id,
+              name: product.name,
+              price: product.sellPrice,
+              unit: product.unit,
+              quantity
+            })
+          }
+        })
+      }
+    })
 
     const salesCycle = {products, nonLocalProducts, customers, 
-      targetWeek: { weekNumber, year }, creationDate: new Date(), deadline }
+      deliveryDate, creationDate: new Date(), deadline }
 
     const service = await connectDrive()
-    const result = await createRemoteFile(service, salesCycle, workingFileName, workingFolderName)
+    const result = await createRemoteFile(service, salesCycle, config.workingFileName, config.workingFolderName)
     await createVolumesFile(salesCycle)
     return result
 }
 
 export const updateCustomers = async() : Promise<void> => {
-  const docCustomersAndOther = await connectSpreadsheet(googleSheetIdCustomers)
+  const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
 
   const customers = await getCustomerData(docCustomersAndOther)
   const currentContent = JSON.parse(await getDataFileContent()) as SalesCycle
@@ -90,9 +104,9 @@ const updateDataFile = async(newContent: SalesCycle): Promise<void> => {
 }
 
 const getDataFileId = async(service: drive_v3.Drive): Promise<string> => {
-  const workingFolder = await getWorkingFolder(service, workingFolderName)
+  const workingFolder = await getWorkingFolder(service, config.workingFolderName)
 
-  return await getFileId(service, workingFileName, workingFolder.id!)
+  return await getFileId(service, config.workingFileName, workingFolder.id!)
 }
 
 export const getDataFileContent = async (): Promise<string> => {
@@ -100,31 +114,27 @@ export const getDataFileContent = async (): Promise<string> => {
   const dataFileId = await getDataFileId(service)
   
   if(!dataFileId){
-    throw new Error(`Remote working file ${workingFileName} not found`)
+    throw new Error(`Remote working file ${config.workingFileName} not found`)
   }
 
   return getFileContent(service, dataFileId!)
 }
 
-const getNonLocalProducts = async (doc: GoogleSpreadsheet): Promise<NonLocalProductData[]>  => {
-  const sheet = doc.sheetsByTitle['Produits hors coopérative']
+const getNonLocalProductsPackaging = async (doc: GoogleSpreadsheet): Promise<{[productId: number]:number}>  => {
+  const sheet = doc.sheetsByTitle['Produits hors coopérative - conditionnements']
   await sheet.loadCells()
   
-  const nonLocalProducts = [] as NonLocalProductData[]
-  let i = 1, name='dummy', category, unit, packaging, price
+  const result = {} as {[productId: number]: number}
+  let i = 1, name='dummy', packaging, id
   while(name) {
-      category = sheet.getCell(i, 0).value as string
-      name = sheet.getCell(i, 1).value as string
-      unit = sheet.getCell(i, 2).value as string
-      packaging = sheet.getCell(i, 3).value as number
-      price = sheet.getCell(i, 4).value as number
-      if(name) {
-        nonLocalProducts.push({
-          id: nextId(), category, name, unit, packaging, price
-        })
-      }
-      i ++
+    id = sheet.getCell(i, 0).value as number
+    name = sheet.getCell(i, 1).value as string
+    packaging = sheet.getCell(i, 2).value as number
+    if(name) {
+      result[id] = packaging
+    }
+    i ++
   }
-  return nonLocalProducts
+  return result
 }
 

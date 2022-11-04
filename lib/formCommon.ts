@@ -21,10 +21,7 @@ setLocale({
     next?: () => void,
     prev?: () => void,
     mutateCustomer?: (customer: CustomerData) => void,
-    save: ( customer: CustomerData, targetWeek: {
-      weekNumber: number,
-      year: number
-  }) => Promise<string>
+    save: ( customer: CustomerData, delivery: Date) => Promise<string>
 }
 
 export interface OrderPrefs {

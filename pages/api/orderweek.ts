@@ -2,7 +2,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { utils } from 'ethers'
 import { createDataFile, getDataFileContent, updateCustomers } from '../../lib/dataFile'
-import { isCurrentOrNextWeekNumber } from '../../lib/dateWeek'
 import { handleException } from '../../lib/request'
 
 type Data = {
@@ -21,12 +20,12 @@ export default async function handler(
             if(!authorizedSigners.find(authorizedSigner => authorizedSigner === signerAddress)){
                 res.status(500).json({ error: 'Unauthorized' })
             } else {
-                if(!req.body.weekNumber || !isCurrentOrNextWeekNumber(req.body.weekNumber)){
-                    res.status(500).json({ error: 'Invalid or missing weekNumber' })
-                } else if (!req.body.deadline){
-                    res.status(500).json({ error: 'missing deadline' })
+                if(!req.body.delivery || isNaN(new Date(req.body.delivery).getTime()) || new Date(req.body.delivery) < new Date() ){
+                    res.status(500).json({ error: 'Invalid or missing delivery date' })
+                } else if (!req.body.deadline || isNaN(new Date(req.body.deadline).getTime())){
+                    res.status(500).json({ error: 'Invalid or missing deadline' })
                 } else {
-                    await createDataFile(req.body.weekNumber, req.body.year, new Date(req.body.deadline))
+                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), 'Disponibilités semaine en cours')
                     res.status(200).json({ error: '' })
                 }
             }

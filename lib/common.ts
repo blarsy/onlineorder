@@ -78,10 +78,7 @@ export interface SalesCycle {
     products: ProductData[],
     nonLocalProducts: NonLocalProductData[],
     customers: CustomerData[],
-    targetWeek: {
-        weekNumber: number,
-        year: number
-    },
+    deliveryDate: Date,
     creationDate: Date,
     deadline: Date
 }

@@ -27,7 +27,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
                         deliveryTime.checked = values[key] as boolean
                     }
                 })
-                const error = await save(customer, enrichedSalesCycle.salesCycle.targetWeek)
+                const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
                 if(error) {
                     setSavePrefsError(error)
                 } else {

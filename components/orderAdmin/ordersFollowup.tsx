@@ -28,8 +28,7 @@ const OrdersFollowup = () => {
             try {
                 setOrdersState({ loading: true, error: '', data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle })
                 const enrichedSalesCycle = await getData()
-                const targetWeek = enrichedSalesCycle.salesCycle.targetWeek
-                const res = await axios.get(`/api/order?weeknumber=${targetWeek.weekNumber}&year=${targetWeek.year}`)
+                const res = await axios.get(`/api/order?delivery=${enrichedSalesCycle.salesCycle.deliveryDate.toISOString()}`)
                 setOrdersState({ loading: false, error: '', data: res.data, enrichedSalesCycle })
             } catch(e: any) {
                 setOrdersState({ loading: false, error: e.toString(), data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle})

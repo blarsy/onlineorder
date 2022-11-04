@@ -3,13 +3,10 @@ import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3, sheets_v4 } from 'googleapis'
 import { Readable } from 'stream'
 import { OrderData } from './common'
+import config from './serverConfig'
 
-
-const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
-const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY ? JSON.parse(process.env.GOOGLE_PRIVATE_KEY!).privateKey : '' as string
-
-export const getSheets = (providedGoogleServiceAccount?: string, providedGooglePrivateKey?: string) : sheets_v4.Sheets => {
-    const auth = new google.auth.JWT(providedGoogleServiceAccount || googleServiceAccount, undefined, providedGooglePrivateKey || googlePrivateKey, 'https://www.googleapis.com/auth/spreadsheets')
+export const getSheets = () : sheets_v4.Sheets => {
+    const auth = new google.auth.JWT(config.googleServiceAccount, undefined, config.googlePrivateKey, 'https://www.googleapis.com/auth/spreadsheets')
     return google.sheets({version: 'v4', auth})
 }
 
@@ -17,8 +14,8 @@ export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreads
     const doc = new GoogleSpreadsheet(sheetId)
 
     await doc.useServiceAccountAuth({
-        client_email: googleServiceAccount,
-        private_key: googlePrivateKey
+        client_email: config.googleServiceAccount,
+        private_key: config.googlePrivateKey
     })
 
     await doc.loadInfo()
@@ -32,8 +29,8 @@ export const connectDrive = async (): Promise<drive_v3.Drive> => {
         const auth = new GoogleAuth({
             scopes: 'https://www.googleapis.com/auth/drive',
             credentials: {
-                client_email: googleServiceAccount,
-                private_key: googlePrivateKey
+                client_email: config.googleServiceAccount,
+                private_key: config.googlePrivateKey
             }
         })
     
