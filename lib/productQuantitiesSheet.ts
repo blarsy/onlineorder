@@ -1,4 +1,5 @@
 import { getWeek } from './dateWeek'
+import { easyDate, easyDateTime } from './formCommon'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
 import config from './serverConfig'
@@ -14,7 +15,8 @@ interface ProductQuantities {
 interface AvailableProductsSnapshot {
     delivery: Date,
     productQuantities: ProductQuantities,
-    productQuantitiesPlannedCrops: ProductQuantities
+    productQuantitiesPlannedCrops: ProductQuantities,
+    productQuantitiesInStock: {[productId: number]:number | string}
 }
 
 interface ProductSheetInput {
@@ -26,14 +28,20 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
-export const createBlankQuantitiesSheet = async (delivery: Date) => {
-    const sheetId = await createNewSheet(
+export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number) => {
+    const newSheetId = await createNewSheet(
         config.googleSheetIdProducts, 
-        'Disponibilités semaine prochaine',
+        `Disponibilités pour livraison ${easyDate(delivery)}`,
         { gridProperties: { columnCount: 50 } })
+    
+    let initialData = undefined as AvailableProductsSnapshot | undefined
+    if(sourceSheetId) {
+        initialData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId, true)
+    }
+    
     await createProductsSheet(config.googleSheetIdProducts, 
-        sheetId, delivery, 
-        ['bertrand.larsy@gmail.com', config.googleServiceAccount])
+        newSheetId, delivery, deadline,
+        ['bertrand.larsy@gmail.com', config.googleServiceAccount], initialData)
 }
 
 
@@ -48,7 +56,7 @@ export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, a
             spreadsheetId })).data.sheets?.find(sheet => sheet.properties?.title === currentTitle)
         
         if(targetSheet){
-            currentTitle = `${sheetTitle}${num ++}`
+            currentTitle = `${sheetTitle}(${num ++})`
         }
     } while(targetSheet)
     const res = await sheets.spreadsheets.batchUpdate({
@@ -91,7 +99,7 @@ const fromSheetDate = (num : number): Date => {
     return new Date(num * millisecondsInADay + refDate)
 }
 
-export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
+export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, deadline: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
     const productSheetInput = await getProductSheetInput()
     const products = productSheetInput.products
     const numberOfProducts = productSheetInput.numberOfProducts
@@ -103,8 +111,10 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     const colTitles = [...productColHeaders]
     colTitles.push(...productSheetInput.producers.map(producer => producer.name))
     colTitles.push(...productSheetInput.producersWithPlannedCrops.map(producer => producer.name))
+    colTitles.push('Stock frigo')
     const producersIds = productSheetInput.producers.map(producer => producer.id)
     producersIds.push(...productSheetInput.producersWithPlannedCrops.map(producer => producer.id))
+    producersIds.push(0) // special 'producer' for the storage room
     const lastHeaderCol = colTitles.length
 
     const productsGridValues = [] as Array<Array<any>>
@@ -136,13 +146,13 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     range: {
                         sheetId,
                         startRowIndex: 0, endRowIndex: 1,
-                        startColumnIndex: 3, endColumnIndex: 4
+                        startColumnIndex: 2, endColumnIndex: 3
                     },
                     cell: {
                         userEnteredFormat: {
                             numberFormat: {
                                 type: 'DATE',
-                                pattern: 'dd/MM/yyy hh:mm'
+                                pattern: 'ddd dd/MM/yyy hh:mm'
                             }
                         }
                     },
@@ -166,8 +176,8 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     range: `${targetSheet?.properties?.title}!A${firstDataRow - 1}:${getA1Notation(firstDataRow - 1, lastHeaderCol)}`,
                     values: [colTitles]
                 }, {
-                    range: `${targetSheet?.properties?.title}!C1:E1`,
-                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}` ]]
+                    range: `${targetSheet?.properties?.title}!B1:E1`,
+                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, `Clôture: ${easyDateTime(deadline)}` ]]
                 }
             ]
         }
@@ -210,13 +220,14 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     }
                 },
                 {
+                    // Make the delivery date appear big enough
                     repeatCell: {
                         range: {
                             sheetId,
                             startRowIndex: 0,
                             endRowIndex: 1,
-                            startColumnIndex: 1,
-                            endColumnIndex: 4
+                            startColumnIndex: 2,
+                            endColumnIndex: 3
                         },
                         cell: {
                             userEnteredFormat: {
@@ -286,6 +297,23 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                             endRowIndex: firstDataRow - 1,
                             startColumnIndex: productColHeaders.length + 1,
                             endColumnIndex: productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length
+                        },
+                        cell: {
+                            userEnteredFormat: {
+                                wrapStrategy: 'WRAP'
+                            }
+                        },
+                        fields: 'userEnteredFormat.wrapStrategy'
+                    },
+                },
+                {
+                    repeatCell: {
+                        range: {
+                            sheetId,
+                            startRowIndex: 0,
+                            endRowIndex: 1,
+                            startColumnIndex: 3,
+                            endColumnIndex: 6
                         },
                         cell: {
                             userEnteredFormat: {
@@ -388,6 +416,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     }
                 },
                 {
+                    // Excess / unsold quantities title
                     mergeCells: {
                         range: {
                             sheetId,
@@ -400,6 +429,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     }
                 },
                 {
+                    // Planned crops title
                     mergeCells: {
                         range: {
                             sheetId,
@@ -432,6 +462,21 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                         },
                         properties:{
                             pixelSize: 100
+                        },
+                        fields: 'pixelSize'
+                    }
+                },
+                {
+                    //Force unit, margin and price column to smaller width
+                    updateDimensionProperties: {
+                        range: {
+                            sheetId,
+                            dimension: 'COLUMNS',
+                            startIndex: 3,
+                            endIndex: 6,
+                        },
+                        properties:{
+                            pixelSize: 80
                         },
                         fields: 'pixelSize'
                     }
@@ -515,17 +560,16 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     })
 }
 
-export const parseProductSheet = async (spreadsheetId: string, sheetName: string): Promise<AvailableProductsSnapshot> => {
+export const parseProductSheet = async (spreadsheetId: string, sheetId: number, plannedCropsOnly?: boolean): Promise<AvailableProductsSnapshot> => {
     const sheets = await getSheets()
     const productSheetInput = await getProductSheetInput()
     const spreadSheet = await sheets.spreadsheets.get({ spreadsheetId })
-    const sheet = await spreadSheet.data.sheets?.find(sheet => sheet.properties?.title === sheetName)
     const res = await sheets.spreadsheets.getByDataFilter({ 
         spreadsheetId, requestBody: {
             dataFilters: [{
                 // raw quantities data
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length,
+                    sheetId, startColumnIndex: productSheetInput.productColHeaders.length,
                     endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
                     endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
@@ -533,15 +577,16 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
             },{
                 // raw quantities data for planned crops
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
-                    endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length,
+                    sheetId: sheetId, startColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
+                    // include one more column for the storage room
+                    endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length + 1,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
                     endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
                 }
             }, {
                 // column containing the product ids
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: 0,
+                    sheetId, startColumnIndex: 0,
                     endColumnIndex: 1,
                     startRowIndex: productSheetInput.firstDataRow - 1, 
                     endRowIndex: productSheetInput.firstDataRow - 1 + productSheetInput.numberOfProducts
@@ -549,7 +594,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
             }, {
                 // row containing the producer ids
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length,
+                    sheetId, startColumnIndex: productSheetInput.productColHeaders.length,
                     endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
                     startRowIndex: productSheetInput.firstDataRow - 3, 
                     endRowIndex: productSheetInput.firstDataRow - 2
@@ -557,16 +602,17 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
             }, {
                 // row containing the producer ids (with planned crops)
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
-                    endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length,
+                    sheetId, startColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length,
+                    // Take one more column, which is contains the quantities in storage
+                    endColumnIndex: productSheetInput.productColHeaders.length + productSheetInput.producers.length + productSheetInput.producersWithPlannedCrops.length + 1,
                     startRowIndex: productSheetInput.firstDataRow - 3, 
                     endRowIndex: productSheetInput.firstDataRow - 2
                 }
             }, {
                 // Cell containing delivery date
                 gridRange: {
-                    sheetId: sheet?.properties?.sheetId, startColumnIndex: 3,
-                    endColumnIndex: 4,
+                    sheetId, startColumnIndex: 2,
+                    endColumnIndex: 3,
                     startRowIndex: 0, 
                     endRowIndex: 1
                 }
@@ -577,28 +623,33 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
     const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, deliveryDate] = res.data.sheets![0].data!
     const productQuantities = {} as ProductQuantities
 
-    rawQuantities.rowData?.forEach((row, idx) => {
-        const productId = productIds.rowData![idx].values![0].userEnteredValue!.numberValue!
-        row.values!.forEach((quantityCell, qtyIdx) => {
-            const producerId = producerIds.rowData![0].values![qtyIdx].userEnteredValue!.numberValue!
-
-            if(quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) {
-                if(!productQuantities[productId]){
-                    productQuantities[productId] = { producerQuantities: {} as {[producerId: number]: number} }
+    if(!plannedCropsOnly) {
+        rawQuantities.rowData?.forEach((row, idx) => {
+            const productId = productIds.rowData![idx].values![0].userEnteredValue!.numberValue!
+            row.values!.forEach((quantityCell, qtyIdx) => {
+                const producerId = producerIds.rowData![0].values![qtyIdx].userEnteredValue!.numberValue!
+    
+                if(quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) {
+                    if(!productQuantities[productId]){
+                        productQuantities[productId] = { producerQuantities: {} as {[producerId: number]: number} }
+                    }
+                    productQuantities[productId].producerQuantities[producerId] = (quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) as number | string
                 }
-                productQuantities[productId].producerQuantities[producerId] = (quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) as number | string
-            }
+            })
         })
-    })
+    }
 
     const productQuantitiesPlannedCrops = {} as ProductQuantities
+    const productQuantitiesInStock = {} as {[productId: number]:(number | string)}
 
     rawQuantitiesPlannedCrops.rowData?.forEach((row, idx) => {
         const productId = productIds.rowData![idx].values![0].userEnteredValue!.numberValue!
         row.values!.forEach((quantityCell, qtyIdx) => {
             const producerId = producersWithPlannedCropsIds.rowData![0].values![qtyIdx].userEnteredValue!.numberValue!
 
-            if(quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) {
+            if(producerId === 0) {
+                productQuantitiesInStock[productId] = (quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) as number | string
+            }else if(quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) {
                 if(!productQuantitiesPlannedCrops[productId]){
                     productQuantitiesPlannedCrops[productId] = { producerQuantities: {} as {[producerId: number]: number} }
                 }
@@ -607,7 +658,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetName: string
         })
     })
 
-    const result = { productQuantities, productQuantitiesPlannedCrops,
+    const result = { productQuantities, productQuantitiesPlannedCrops, productQuantitiesInStock,
         delivery: fromSheetDate(deliveryDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
     return result
 }
@@ -623,7 +674,9 @@ const getA1Notation = (row: number, column: number):string => {
     return a1Notation.join('');
 }
 
-const makeProductQuantitiesLine = (initialProductQuantities: (number | string | null)[], initialQuantities: AvailableProductsSnapshot, productId: number, producers: OdooProducer[], producersWithPlannedCrops: OdooProducer[]) => {
+const makeProductQuantitiesLine = (initialProductQuantities: (number | string | null)[], 
+    initialQuantities: AvailableProductsSnapshot, productId: number, producers: OdooProducer[], 
+    producersWithPlannedCrops: OdooProducer[]) => {
     if(initialQuantities.productQuantities[productId]) {
         const productQuantities = initialQuantities.productQuantities[productId].producerQuantities
         producers.forEach(producer => {
@@ -646,6 +699,11 @@ const makeProductQuantitiesLine = (initialProductQuantities: (number | string | 
                 value = productQuantitiesPlannedCrops[producer.id]
             }
             initialProductQuantities.push(value)
-        })     
+        })  
+        let inStock = null
+        if(initialQuantities.productQuantitiesInStock[productId]){
+            inStock = initialQuantities.productQuantitiesInStock[productId]
+        }
+        initialProductQuantities.push(inStock)
     }   
 }

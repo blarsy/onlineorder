@@ -15,6 +15,15 @@ export const addDays = function (refDate:Date, days: number): Date {
   return date
 }
 
+export const findNextWeekdayTime = (weekday: number, hour: number) => {
+  const now = new Date()
+  let refDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
+  while(refDate.getDay() != weekday){
+      refDate = new Date(1000 * 60 * 60 * 24 + refDate.valueOf())
+  }
+  return new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate(), hour, 0, 0)
+}
+
 export const getWeekBounds = function(date: Date): Date[] {
   const todayMidnight = new Date(date)
   todayMidnight.setHours(0,0,0,0)

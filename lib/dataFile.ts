@@ -27,12 +27,12 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
     return customers
 }
 
-export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetTitle: string): Promise<drive_v3.Schema$File> => {
+export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetId: number): Promise<drive_v3.Schema$File> => {
     const customerSheetId = config.googleSheetIdCustomers
     const docCustomersAndOther = await connectSpreadsheet(customerSheetId)
 
     const customers = await getCustomerData(docCustomersAndOther)
-    const quantitiesData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetTitle)
+    const quantitiesData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
     const productsByCategories = await getProductsForOnlineOrdering()
     const nonLocalProductsPackagings = await getNonLocalProductsPackaging(docCustomersAndOther)
     const products = [] as ProductData[]
@@ -58,11 +58,13 @@ export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceS
         productsByCategories[cat].forEach(product => {
           const producerQuantities = quantitiesData.productQuantities[product.id] ? quantitiesData.productQuantities[product.id].producerQuantities : {}
           const plannedCropsQuantities = quantitiesData.productQuantitiesPlannedCrops[product.id] ? quantitiesData.productQuantitiesPlannedCrops[product.id].producerQuantities : {}
+          const inStockQuantity = (typeof quantitiesData.productQuantitiesInStock[product.id] === 'number') ? quantitiesData.productQuantitiesInStock[product.id] as number : 0
 
           const quantity = Object.keys(producerQuantities).reduce<number>((acc, producerId) => 
             acc + (typeof producerQuantities[Number(producerId)] === 'number' ? producerQuantities[Number(producerId)] as number : 0), 0) +
             Object.keys(plannedCropsQuantities).reduce((acc, producerId) => 
-            acc + (typeof plannedCropsQuantities[Number(producerId)] === 'number' ? plannedCropsQuantities[Number(producerId)] as number : 0), 0)
+            acc + (typeof plannedCropsQuantities[Number(producerId)] === 'number' ? plannedCropsQuantities[Number(producerId)] as number : 0), 0) +
+            inStockQuantity
 
           if(quantity > 0) {
             products.push({

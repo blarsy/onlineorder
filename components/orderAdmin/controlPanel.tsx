@@ -7,6 +7,7 @@ import { ConnectionData } from '../../lib/common'
 import OrdersFollowup from './ordersFollowup'
 import CustomerLinks from './customerLinks'
 import DataFiles from './dataFiles'
+import QuantitiesSheets from './quantitiesSheets'
 
 yup.setLocale({
     mixed: {
@@ -25,12 +26,15 @@ const ControlPanel = ({connectionData}: Props) => {
     let content
     switch(currentTab) {
         case 0:
-            content = <DataFiles connectionData={connectionData} />
+            content = <QuantitiesSheets connectionData={connectionData} />
             break
         case 1:
-            content = <OrdersFollowup />
+            content = <DataFiles connectionData={connectionData} />
             break
         case 2:
+            content = <OrdersFollowup />
+            break
+        case 3:
             content = <CustomerLinks />
             break
         default:
@@ -38,9 +42,10 @@ const ControlPanel = ({connectionData}: Props) => {
 
     return <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Tabs sx={{ mb: '1rem' }} value={currentTab} centered onChange={(event: React.SyntheticEvent, newValue: number) => setCurrentTab(newValue)} >
-          <Tab label="Gérer les semaines" />
-          <Tab label="Suivi commandes" />
-          <Tab label="Liens commande clients" />
+            <Tab label="Stocks partagés" />
+            <Tab label="Campagnes" />
+            <Tab label="Suivi commandes" />
+            <Tab label="Liens commande clients" />
         </Tabs>
         { content }
     </LocalizationProvider>

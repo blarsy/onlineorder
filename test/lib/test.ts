@@ -28,15 +28,15 @@ test('Get products from Odoo', async () => {
         googleSheetIdProducts: '1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4',
         volumesFileName: 'testvolumes.json'
     })
-    const availableProducts = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
-    const sheetId = await createNewSheet(
-        '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-        'Produits',
-        { gridProperties: { columnCount: 50 } })
-    await createProductsSheet('1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-        sheetId, new Date('2022-11-10T09:00-02:00'), 
-        ['bertrand.larsy@gmail.com', 'ordermodule@coopalimentaire.iam.gserviceaccount.com'],
-        availableProducts)
+    // const availableProducts = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
+    // const sheetId = await createNewSheet(
+    //     '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
+    //     'Produits',
+    //     { gridProperties: { columnCount: 50 } })
+    // await createProductsSheet('1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
+    //     sheetId, new Date('2022-11-10T09:00-02:00'), new Date('2022-11-08T09:00-02:00'), 
+    //     ['bertrand.larsy@gmail.com', 'ordermodule@coopalimentaire.iam.gserviceaccount.com'],
+    //     availableProducts)
     
     //const res = await getLocalProductsByCategories({ "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" })
     //console.log(res)

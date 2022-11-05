@@ -1,49 +1,38 @@
-import { Box, Button, Stack, TextField, Typography, Alert } from '@mui/material'
-import PeopleAlt from '@mui/icons-material/PeopleAlt'
-import { LoadingButton } from '@mui/lab'
+import { Box, Stack, TextField, Typography } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState } from 'react'
-import { JSONTree } from 'react-json-tree'
-import Loader from '../form/loader'
-import axios from 'axios'
 import {
     Formik,
     ErrorMessage,
     Form,
   } from 'formik'
 import * as yup from 'yup'
+import axios from 'axios'
+import { ConnectionData } from "../../lib/common"
 import { findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
 import '../../lib/formCommon'
-import { ConnectionData } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
 
 interface Props {
     connectionData: ConnectionData
 }
 
-interface Values {
-    delivery: Date,
-    deadline: Date,
+interface CreateQuantitiesSheetValues {
+    delivery: Date
+    deadline: Date
     sheetId: string
 }
 
-const DataFiles = ({ connectionData } : Props) => {
-    const [creationError, setCreationError] = useState('')
-    const [loadFileStatus, setLoadFileStatus] = useState({
-        loading: false,
-        error: '',
-        initial: true,
-        fileContent: null as object | null
-    })
-    const [updatingCustomers, setUpdatingCustomers] = useState({ working: false, error: '' })
+const QuantitiesSheets = ({ connectionData } : Props) => {
+    const [createQuantitiesSheet, setCreateQuantitiesSheet] = useState({ working: false, error: ''})
 
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
         <Formik
             initialValues={{
                 delivery: findNextWeekdayTime(4, 12),
-                deadline: findNextWeekdayTime(2, 11),
+                deadline: findNextWeekdayTime(2,11),
                 sheetId: ''
             }}
             validationSchema={ yup.object({
@@ -70,20 +59,21 @@ const DataFiles = ({ connectionData } : Props) => {
                 sheetId: yup.number()
             }) }
             onSubmit={async (
-                values: Values
+                values: CreateQuantitiesSheetValues
             ) => {
                 try {
+                    setCreateQuantitiesSheet({ working: true, error: '' })
                     const message = new Date().toUTCString()
                     const signature = await connectionData.signer?.signMessage(message)
-                    await axios.put('/api/orderweek', { message, signature, 
+                    await axios.put('/api/quantitiessheet', { message, signature, 
                         delivery: values.delivery, deadline: values.deadline, sheetId: values.sheetId })
-                    setCreationError('')
+                    setCreateQuantitiesSheet({ working: false, error: '' })
                 } catch (e) {
-                    setCreationError((e as Error).toString())
+                    setCreateQuantitiesSheet({ working: false, error: (e as Error).toString()})
                 }
             }}
         >
-            {({ isSubmitting, touched, setFieldValue, setTouched, getFieldProps, values }) => (
+        {({ isSubmitting, setFieldValue, setTouched, touched, values, getFieldProps }) => (
             <Stack component={Form} gap="1rem">
                 <SheetsSelect fieldProps={getFieldProps('sheetId')}/>
                 <DateTimePicker
@@ -97,7 +87,7 @@ const DataFiles = ({ connectionData } : Props) => {
                 />
                 <Typography variant="body1" color="error"><ErrorMessage name="delivery" /></Typography>
                 <DateTimePicker
-                    label="Clôture commandes"
+                    label="Clôture"
                     onChange={(value) => {
                         setFieldValue('deadline', (value as Dayjs).toDate(), true)
                         setTouched({ ...touched, ...{ deadline: true } })
@@ -106,34 +96,11 @@ const DataFiles = ({ connectionData } : Props) => {
                     renderInput={(params) => <TextField {...params} />}
                 />
                 <Typography variant="body1" color="error"><ErrorMessage name="deadline" /></Typography>
-                <Submit isSubmitting={isSubmitting} label="Nouvelle campagne" submitError={creationError}/>
-            </Stack>)}
+                <Submit isSubmitting={isSubmitting} label="Nouvelle feuille de quantités" submitError={createQuantitiesSheet.error}/>
+            </Stack>)
+        }
         </Formik>
-        <Button onClick={async () => {
-            setLoadFileStatus({ loading: true, error: '', initial: loadFileStatus.initial, fileContent: null })
-            try {
-                const fileContentRes = await axios.get('/api/orderweek')
-                setLoadFileStatus({ loading: false, error: '', initial: false, fileContent: fileContentRes.data })
-            } catch(e) {
-                setLoadFileStatus({ loading: false, error: e as string, initial: loadFileStatus.initial, fileContent: null })
-            }
-        }}>Voir données actuelles</Button>
-        <Loader loading={loadFileStatus.loading} error={loadFileStatus.error} initial={loadFileStatus.initial}>
-            <JSONTree data={loadFileStatus.fileContent} />
-        </Loader>
-        <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
-            setUpdatingCustomers({ working: true, error: '' })
-            try{
-                const message = new Date().toISOString()
-                const signature = await connectionData.signer?.signMessage(message)
-                await axios.patch('/api/orderweek', { message, signature, customers: 1 })
-                setUpdatingCustomers({ working: false, error: '' })
-            } catch(e: any) {
-                setUpdatingCustomers({ working: false, error: e.toString() })
-            }
-        }} >Mettre à jour les clients</LoadingButton>
-        { updatingCustomers.error && <Alert severity='error'>{updatingCustomers.error}</Alert>}
     </Box>
 }
 
-export default DataFiles
+export default QuantitiesSheets

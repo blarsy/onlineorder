@@ -21,8 +21,11 @@ export default async function handler(
                 } else {
                     if(!req.body.delivery || isNaN(new Date(req.body.delivery).getTime()) || new Date(req.body.delivery) < new Date()){
                         res.status(500).json({ error: 'Invalid or missing delivery date' })
+                    } else if(!req.body.deadline || isNaN(new Date(req.body.deadline).getTime()) 
+                        || new Date(req.body.deadline) < new Date() || new Date(req.body.deadline) > new Date(req.body.delivery)){
+                        res.status(500).json({ error: 'Invalid or missing deadline date' })
                     } else {
-                        await createBlankQuantitiesSheet(new Date(req.body.delivery))
+                        await createBlankQuantitiesSheet(new Date(req.body.delivery),new Date(req.body.deadline), req.body.sheetId)
                         res.status(200).json({ error: '' })
                     }
                 }

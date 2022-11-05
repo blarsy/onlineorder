@@ -1,4 +1,3 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { utils } from 'ethers'
 import { createDataFile, getDataFileContent, updateCustomers } from '../../lib/dataFile'
@@ -25,7 +24,7 @@ export default async function handler(
                 } else if (!req.body.deadline || isNaN(new Date(req.body.deadline).getTime())){
                     res.status(500).json({ error: 'Invalid or missing deadline' })
                 } else {
-                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), 'Disponibilités semaine en cours')
+                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId)
                     res.status(200).json({ error: '' })
                 }
             }
