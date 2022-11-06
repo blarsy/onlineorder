@@ -23,8 +23,10 @@ export default async function handler(
                     res.status(500).json({ error: 'Invalid or missing delivery date' })
                 } else if (!req.body.deadline || isNaN(new Date(req.body.deadline).getTime())){
                     res.status(500).json({ error: 'Invalid or missing deadline' })
-                } else {
-                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId)
+                } else if (!req.body.deliveryTimes || !req.body.deliveryTimes.length || req.body.deliveryTimes.length === 0 ) {
+                    res.status(500).json({ error: 'Invalid or missing delivery times' })
+                }{
+                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId, req.body.deliveryTimes)
                     res.status(200).json({ error: '' })
                 }
             }

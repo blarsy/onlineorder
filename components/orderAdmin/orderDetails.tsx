@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from "@mui/material"
 import { OrderData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
+import DeliveryPreferences from "../orderCreate/deliveryPreferences"
 
 const ALT_COLOR = '#CCC'
 
@@ -56,6 +57,7 @@ const OrderDetails = ({ order, enrichedSalesCycle }: Props) => {
     })
     const orderLinesElements = [...headerProducts,...productElements, ...headerNonLocalProducts, ...nonLocalProductElements]
     return <Box component={Paper} display="flex" flexDirection="row" flexWrap="wrap" sx={{ flex: '0 0 100%', padding: '1rem' }}>
+        <DeliveryPreferences order={order} />
         { orderLinesElements }
     </Box>
 }

@@ -24,7 +24,7 @@ setLocale({
     save: ( customer: CustomerData, delivery: Date) => Promise<string>
 }
 
-export interface OrderPrefs {
+export interface DeliveryPrefs {
   [preferredDeliveryTimeId: string]: boolean,
 }
 

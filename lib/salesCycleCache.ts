@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes } from './common'
+import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes, DeliveryTimes, AvailableDeliveryTime } from './common'
 
 type ProductsByCategory = {
     [category: string]: number[]
@@ -31,6 +31,10 @@ export const getData = async (): Promise<EnrichedSalesCycle> => {
             salesCycle.creationDate = new Date(salesCycle.creationDate)
             salesCycle.deliveryDate = new Date(salesCycle.deliveryDate)
             salesCycle.deadline = new Date(salesCycle.deadline)
+            salesCycle.availableDeliveryTimes = salesCycle.availableDeliveryTimes.map(adt => ({ 
+                day: new Date(adt.day),
+                times: adt.times.map(time => DeliveryTimes[time]) as unknown as DeliveryTimes[]
+            }))
     
             data = enrichSalesCycle(salesCycle)
         } else {

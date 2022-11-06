@@ -36,7 +36,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
             }}>
             {({ isSubmitting, getFieldProps, errors, touched, values }) => {
                 return <Box component={Form}>
-                    <DeliveryPreferenceInput values={values} order={customer.order!} getFieldProps={getFieldProps} errors={errors} touched={touched}/>
+                    <DeliveryPreferenceInput values={values} deliveryTimes={customer.order!.preferredDeliveryTimes} getFieldProps={getFieldProps} errors={errors} touched={touched}/>
                     <Submit isSubmitting={isSubmitting} disabled={Object.keys(errors).length > 0} label="Passer en revue" submitError={savePrefsError}/>
                 </Box>
             }}

@@ -54,15 +54,17 @@ export interface OrderData {
         productId: number,
         quantity: number
     }[],
-    preferredDeliveryTimes: {
-        day: Date,
-        times: {
-            deliveryTime: DeliveryTimes,
-            checked: boolean
-        }[]
-    }[],
+    preferredDeliveryTimes: DeliveryTime[],
     note: string,
     confirmationDateTime?: Date
+}
+
+export interface DeliveryTime {
+    day: Date,
+    times: {
+        deliveryTime: DeliveryTimes,
+        checked: boolean
+    }[]
 }
 
 export interface CustomerData {
@@ -80,7 +82,13 @@ export interface SalesCycle {
     customers: CustomerData[],
     deliveryDate: Date,
     creationDate: Date,
-    deadline: Date
+    deadline: Date,
+    availableDeliveryTimes: AvailableDeliveryTime[],
+}
+
+export interface AvailableDeliveryTime {
+    day: Date,
+    times: DeliveryTimes[]
 }
 
 export interface OrderedVolumes {

@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { CustomerData, DeliveryTimes, OrderData, OrderStatus } from '../lib/common'
+import { CustomerData, DeliveryTime, DeliveryTimes, OrderData, OrderStatus } from '../lib/common'
 import { EnrichedSalesCycle, getData } from '../lib/salesCycleCache'
 import EditOrder from '../components/orderCreate/editOrder'
 import Loader from '../components/form/loader'
@@ -47,7 +47,11 @@ const Order = () => {
                         if(res.data) {
                             customer.order = orderFromApiCallResult(res.data)
                         } else {
-                            customer.order = createOrderWithDefaults(enrichedSalesCycle.salesCycle.deliveryDate, customer.slug)
+                            const deliveryTimes = enrichedSalesCycle.salesCycle.availableDeliveryTimes.map(adt => ({
+                                day: adt.day, 
+                                times: adt.times.map(time => ({deliveryTime: time, checked: false}) )
+                            } as DeliveryTime))
+                            customer.order = createOrderWithDefaults(deliveryTimes, customer.slug)
                         }
                         setSalesCycleState({ loading: false, error: '', enrichedSalesCycle, customer })
                     }
@@ -99,22 +103,11 @@ const Order = () => {
 
 export default Order
 
-function createOrderWithDefaults(deliveryDate: Date, slug: string): OrderData {
-    const year = deliveryDate.getFullYear()
-    const mondayOfTargetWeek = getDateOfISOWeek(getWeek(deliveryDate), year)
-    const thursdayOfTargetWeek = addDays(mondayOfTargetWeek, 3)
-    const fridayOfTargetWeek = addDays(mondayOfTargetWeek, 4)
-
+function createOrderWithDefaults(deliveryTimes: DeliveryTime[], slug: string): OrderData {
     return {
         slug,
         status: OrderStatus.draft,
-        preferredDeliveryTimes: [{
-            day: thursdayOfTargetWeek,
-            times: [{deliveryTime: DeliveryTimes.h13, checked:false}, {deliveryTime: DeliveryTimes.h14, checked:false}, {deliveryTime: DeliveryTimes.h15, checked:false}]
-        }, {
-            day: fridayOfTargetWeek,
-            times: [{deliveryTime: DeliveryTimes.h8, checked:false}, {deliveryTime: DeliveryTimes.h9, checked:false}, {deliveryTime: DeliveryTimes.h10, checked:false}, {deliveryTime: DeliveryTimes.h11, checked:false}, {deliveryTime: DeliveryTimes.h12, checked:false}] 
-        }],
+        preferredDeliveryTimes: deliveryTimes,
         quantities: [],
         quantitiesNonLocal: [],
         note: ''

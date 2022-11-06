@@ -15,6 +15,18 @@ export const addDays = function (refDate:Date, days: number): Date {
   return date
 }
 
+export const addWorkingDays = function (refDate:Date, days: number): Date {
+  let date = new Date(refDate.valueOf())
+  for(let i = 0; i < days; i ++) {
+    if(date.getDay() === 5) {
+      date.setDate(date.getDate() + 3)
+    } else {
+      date.setDate(date.getDate() + 1)
+    }
+  }
+  return date
+}
+
 export const findNextWeekdayTime = (weekday: number, hour: number) => {
   const now = new Date()
   let refDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)

@@ -1,23 +1,23 @@
 import { Checkbox, FormControlLabel, Typography } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
 import { Box, Stack } from "@mui/system"
-import { OrderData } from "../../lib/common"
-import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, OrderPrefs } from "../../lib/formCommon"
+import { DeliveryTime, DeliveryTimes } from "../../lib/common"
+import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, DeliveryPrefs } from "../../lib/formCommon"
 
 interface Props {
-    order: OrderData,
-    touched: FormikTouched<OrderPrefs>,
-    errors: FormikErrors<OrderPrefs>,
+    deliveryTimes: DeliveryTime[],
+    touched: FormikTouched<{[id: string]: any}>,
+    errors: FormikErrors<{[id: string]: any}>,
     getFieldProps: <Value = any>(props: any) => FieldInputProps<Value>,
-    values: OrderPrefs
+    values: {[id: string]: any}
 }
 
-const DeliveryPreferenceInput = ({ order, getFieldProps, touched, errors, values } : Props) => {
-    const idOfFirstCkeckbox = makePrefCtrlId(order.preferredDeliveryTimes[0].day, order.preferredDeliveryTimes[0].times[0].deliveryTime)
+const DeliveryPreferenceInput = ({ deliveryTimes, getFieldProps, touched, errors, values } : Props) => {
+    const idOfFirstCkeckbox = makePrefCtrlId(deliveryTimes[0].day, deliveryTimes[0].times[0].deliveryTime)
     return <Stack>
         <Typography variant="overline">Préférences de livraison</Typography>
         {
-            order.preferredDeliveryTimes.map(dayPrefs => {
+            deliveryTimes.map(dayPrefs => {
                 return <Box key={dayPrefs.day.valueOf()} display="flex" alignItems="center" flexWrap="wrap">
                     <Box flex="0 0 3rem">{easyDate(dayPrefs.day)}</Box>
                     {
@@ -26,8 +26,7 @@ const DeliveryPreferenceInput = ({ order, getFieldProps, touched, errors, values
                             return <Box flex="0 0 5rem" key={ctrlId}>
                                 <FormControlLabel
                                     value="top"
-                                    control={<Checkbox
-                                        {...getFieldProps(ctrlId)}/>}
+                                    control={<Checkbox {...getFieldProps(ctrlId)}/>}
                                     checked={values[ctrlId]}
                                     label={getDeliveryTimeLabel(dayTime.deliveryTime)}
                                     labelPlacement="top"
@@ -38,7 +37,7 @@ const DeliveryPreferenceInput = ({ order, getFieldProps, touched, errors, values
                 </Box>
             })
         }
-       { Object.keys(touched).length > 0 && errors[idOfFirstCkeckbox] && <Typography color="error" variant="caption">{errors[idOfFirstCkeckbox]}</Typography>}
+       { Object.keys(touched).length > 0 && errors[idOfFirstCkeckbox] && <Typography color="error" variant="caption">{errors[idOfFirstCkeckbox] as string}</Typography>}
     </Stack>
 }
 

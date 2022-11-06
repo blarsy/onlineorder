@@ -1,4 +1,4 @@
-import { Box, Button, Stack, TextField, Typography, Alert } from '@mui/material'
+import { Box, Button, Stack, TextField, Typography, Alert, InputLabel, FormControlLabel, Checkbox } from '@mui/material'
 import PeopleAlt from '@mui/icons-material/PeopleAlt'
 import { LoadingButton } from '@mui/lab'
 import { DateTimePicker } from '@mui/x-date-pickers'
@@ -13,10 +13,10 @@ import {
     Form,
   } from 'formik'
 import * as yup from 'yup'
-import { findNextWeekdayTime } from '../../lib/dateWeek'
+import { addWorkingDays, findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
-import '../../lib/formCommon'
-import { ConnectionData } from '../../lib/common'
+import { easyDate, getDeliveryTimeLabel, makePrefCtrlId } from '../../lib/formCommon'
+import { ConnectionData, DeliveryTime, DeliveryTimes } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
 
 interface Props {
@@ -24,10 +24,11 @@ interface Props {
 }
 
 interface Values {
-    delivery: Date,
-    deadline: Date,
-    sheetId: string
+    [propId: string]: Date | boolean | string
 }
+
+const allDeliveryTimes = [DeliveryTimes.h8, DeliveryTimes.h9, DeliveryTimes.h10, DeliveryTimes.h11, 
+    DeliveryTimes.h12, DeliveryTimes.h13, DeliveryTimes.h14, DeliveryTimes.h15, DeliveryTimes.h16]
 
 const DataFiles = ({ connectionData } : Props) => {
     const [creationError, setCreationError] = useState('')
@@ -44,8 +45,9 @@ const DataFiles = ({ connectionData } : Props) => {
             initialValues={{
                 delivery: findNextWeekdayTime(4, 12),
                 deadline: findNextWeekdayTime(2, 11),
-                sheetId: ''
-            }}
+                sheetId: '',
+                ...initialDeliveryTimesValues(findNextWeekdayTime(4, 12))
+            } as Values}
             validationSchema={ yup.object({
                 delivery: yup.date().required().test((val, ctx) => {
                     if(val) {
@@ -75,15 +77,29 @@ const DataFiles = ({ connectionData } : Props) => {
                 try {
                     const message = new Date().toUTCString()
                     const signature = await connectionData.signer?.signMessage(message)
-                    await axios.put('/api/orderweek', { message, signature, 
-                        delivery: values.delivery, deadline: values.deadline, sheetId: values.sheetId })
+                    const deliveryTimes = {} as {[dayNum: number]: DeliveryTimes[]}
+                    Object.keys(values).filter(key => key.match(/^(\d+)-(.+)$/)).forEach(key => {
+                        const [dummy, dayNum, hour] = key.match(/^(\d+)-(.+)$/)!
+                        const hourKey = hour as keyof typeof DeliveryTimes
+                        if(values[key]) {
+                            if(!deliveryTimes[Number(dayNum)]) {
+                                deliveryTimes[Number(dayNum)] = [DeliveryTimes[hourKey]]
+                            } else {
+                                deliveryTimes[Number(dayNum)].push(DeliveryTimes[hourKey])
+                            }
+                        }
+                    })
+                    await axios.put('/api/orderweek', { message, signature, delivery: values['delivery'] as Date, 
+                        deadline: values['deadline'] as Date, sheetId: values.sheetId as string, 
+                        deliveryTimes: Object.keys(deliveryTimes).map(day => ({ day: addWorkingDays(values['delivery'] as Date, Number(day) - 1), times: deliveryTimes[Number(day)]})) 
+                    })
                     setCreationError('')
                 } catch (e) {
                     setCreationError((e as Error).toString())
                 }
             }}
         >
-            {({ isSubmitting, touched, setFieldValue, setTouched, getFieldProps, values }) => (
+            {({ isSubmitting, errors, touched, setFieldValue, setTouched, getFieldProps, values }) => (
             <Stack component={Form} gap="1rem">
                 <SheetsSelect fieldProps={getFieldProps('sheetId')}/>
                 <DateTimePicker
@@ -92,7 +108,7 @@ const DataFiles = ({ connectionData } : Props) => {
                         setFieldValue('delivery', (value as Dayjs).toDate(), true)
                         setTouched({ ...touched, ...{ deadline: true } })
                     }}
-                    value={dayjs(values.delivery)}
+                    value={dayjs(values['delivery'] as Date)}
                     renderInput={(params) => <TextField {...params} />}
                 />
                 <Typography variant="body1" color="error"><ErrorMessage name="delivery" /></Typography>
@@ -102,9 +118,26 @@ const DataFiles = ({ connectionData } : Props) => {
                         setFieldValue('deadline', (value as Dayjs).toDate(), true)
                         setTouched({ ...touched, ...{ deadline: true } })
                     }}
-                    value={dayjs(values.deadline)}
+                    value={dayjs(values['deadline'] as Date)}
                     renderInput={(params) => <TextField {...params} />}
                 />
+                <InputLabel id="deliveryPrefsLabel">Créneaux de livraisons</InputLabel>
+                {[1, 2, 3].map(dayNumber => {
+                    return <Box key={dayNumber} display="flex" alignItems="center" flexWrap="wrap">
+                        <Box flex="0 0 3rem">{easyDate(addWorkingDays((values['delivery']) as Date, dayNumber - 1))}</Box>
+                        {allDeliveryTimes.map(deliveryTime => {
+                                const ctrlId = `${dayNumber}-${deliveryTime.toString()}`
+                                return <Box flex="0 0 5rem" key={ctrlId}>
+                                    <FormControlLabel
+                                        value="top"
+                                        control={<Checkbox {...getFieldProps(ctrlId)}/>}
+                                        checked={values[ctrlId] as boolean}
+                                        label={getDeliveryTimeLabel(deliveryTime)}
+                                        labelPlacement="top" />
+                                </Box>})
+                        }
+                    </Box>
+                })}
                 <Typography variant="body1" color="error"><ErrorMessage name="deadline" /></Typography>
                 <Submit isSubmitting={isSubmitting} label="Nouvelle campagne" submitError={creationError}/>
             </Stack>)}
@@ -137,3 +170,11 @@ const DataFiles = ({ connectionData } : Props) => {
 }
 
 export default DataFiles
+
+const initialDeliveryTimesValues = (delivery: Date): {[id: string]: boolean} => {
+    const values = {} as {[id: string]: boolean}
+    [1, 2, 3].forEach(dayNum => {
+        allDeliveryTimes.forEach(time => values[`${dayNum}-${time.toString()}`]= false)
+    })
+    return values
+}
