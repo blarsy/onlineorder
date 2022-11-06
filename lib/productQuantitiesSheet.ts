@@ -139,31 +139,6 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
 
     const targetSheet = (await sheets.spreadsheets.get({ 
         spreadsheetId })).data.sheets?.find(sheet => sheet.properties?.sheetId === sheetId)
-
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-            requests: [{
-                // define a date format for the cell that will receive the delivery date
-                repeatCell: {
-                    range: {
-                        sheetId,
-                        startRowIndex: 0, endRowIndex: 1,
-                        startColumnIndex: 2, endColumnIndex: 3
-                    },
-                    cell: {
-                        userEnteredFormat: {
-                            numberFormat: {
-                                type: 'DATE',
-                                pattern: 'ddd dd/MM/yyy hh:mm'
-                            }
-                        }
-                    },
-                    fields: 'userEnteredFormat.numberFormat(type, pattern)'
-                }
-            }]
-        }
-    })
     
     await sheets.spreadsheets.values.batchUpdate({ 
         spreadsheetId, 
@@ -190,6 +165,24 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
         spreadsheetId,
         requestBody: {
             requests: [{
+                // define a date format for the cell that will receive the delivery date
+                repeatCell: {
+                    range: {
+                        sheetId,
+                        startRowIndex: 0, endRowIndex: 1,
+                        startColumnIndex: 2, endColumnIndex: 3
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'DATE',
+                                pattern: 'ddd dd/MM/yyy hh:mm'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat(type, pattern)'
+                }
+            },{
                 addBanding: {
                     bandedRange: {
                         range: {
