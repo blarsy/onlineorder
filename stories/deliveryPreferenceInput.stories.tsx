@@ -80,4 +80,4 @@ const getFieldProps = (name: string) => {
 
 export const Primary: ComponentStory<typeof DeliveryPreferenceInput> = () => 
   <DeliveryPreferenceInput 
-    order={order} values={{}} errors={{}} touched={{}} getFieldProps={getFieldProps}></DeliveryPreferenceInput>;
+    deliveryTimes={order.preferredDeliveryTimes} values={{}} errors={{}} touched={{}} getFieldProps={getFieldProps}></DeliveryPreferenceInput>;
