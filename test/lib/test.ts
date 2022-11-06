@@ -28,6 +28,8 @@ test('Get products from Odoo', async () => {
         googleSheetIdProducts: '1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4',
         volumesFileName: 'testvolumes.json'
     })
+    const result = await parseProductSheet(config.googleSheetIdProducts, '165810646', true)
+    console.log(result)
     // const availableProducts = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
     // const sheetId = await createNewSheet(
     //     '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 

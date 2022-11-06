@@ -29,16 +29,19 @@ interface ProductSheetInput {
 }
 
 export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number) => {
+    let initialData = undefined as AvailableProductsSnapshot | undefined
+    let initialDataPromise = undefined
+    if(sourceSheetId) {
+        initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, true)
+    }
     const newSheetId = await createNewSheet(
         config.googleSheetIdProducts, 
         `Disponibilités pour livraison ${easyDate(delivery)}`,
         { gridProperties: { columnCount: 50 } })
     
-    let initialData = undefined as AvailableProductsSnapshot | undefined
-    if(sourceSheetId) {
-        initialData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId, true)
+    if(initialDataPromise) {
+        initialData = await initialDataPromise
     }
-    
     await createProductsSheet(config.googleSheetIdProducts, 
         newSheetId, delivery, deadline,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], initialData)
