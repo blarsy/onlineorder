@@ -1,8 +1,8 @@
 import { Box, Stack, Alert, Dialog, Button, Typography, Paper } from '@mui/material'
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
 import PeopleAlt from '@mui/icons-material/PeopleAlt'
 import Storefront from '@mui/icons-material/StoreFront'
 import { LoadingButton } from '@mui/lab'
@@ -15,11 +15,10 @@ import {
 import * as yup from 'yup'
 import { ConnectionData, SalesCycle } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
-import CreateCampaign from './createCampaign';
-import Loader from '../form/loader';
-import { LocalDrinkSharp } from '@mui/icons-material';
-import { getData } from '../../lib/salesCycleCache';
-import { easyDateTime } from '../../lib/formCommon';
+import CreateCampaign from './createCampaign'
+import Loader from '../form/loader'
+import { getData } from '../../lib/salesCycleCache'
+import { easyDateTime } from '../../lib/formCommon'
 
 interface Props {
     connectionData: ConnectionData
