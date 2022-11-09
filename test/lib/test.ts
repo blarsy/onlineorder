@@ -1,4 +1,4 @@
-import { createProductsSheet, createNewSheet, parseProductSheet } from "../../lib/productQuantitiesSheet"
+import { createProductsSheet, createNewSheet, parseProductSheet, createBlankQuantitiesSheet } from "../../lib/productQuantitiesSheet"
 import creds from '../../google-creds.json'
 import { getLocalProductsByCategories, getProductsForOnlineOrdering } from "../../lib/odoo"
 import { createDataFile } from "../../lib/dataFile"
@@ -25,11 +25,11 @@ test('Get products from Odoo', async () => {
         googleSheetIdCustomers: '1GtOR0Hb6lrzUhGguFxEdivKwqm-v3x6LY-tCF0IgblQ',
         workingFileName: 'testdata.json',
         workingFolderName: 'Coop-dev',
-        googleSheetIdProducts: '1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4',
+        googleSheetIdProducts: '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE',
         volumesFileName: 'testvolumes.json'
     })
-    const result = await parseProductSheet(config.googleSheetIdProducts, '165810646', true)
-    console.log(result)
+    await createDataFile(new Date(2022, 10, 14, 6, 0, 0), new Date(2022, 10, 10, 12, 0, 0), 581640229, [])
+    // await createBlankQuantitiesSheet(new Date(2022,10,10,12,0,0), new Date(2022,10,8,11,0,0), 165810646, false)
     // const availableProducts = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
     // const sheetId = await createNewSheet(
     //     '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 

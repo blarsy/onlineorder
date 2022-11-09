@@ -3,7 +3,7 @@ import { drive_v3 } from 'googleapis'
 import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime } from './common'
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { getProductsForOnlineOrdering } from './odoo'
-import { parseProductSheet } from './productQuantitiesSheet'
+import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
 import { create as createVolumesFile } from './volumesFile'
 import config from './serverConfig'
 
@@ -28,15 +28,19 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
 }
 
 export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetId: number, availableDeliveryTimes: AvailableDeliveryTime[]): Promise<drive_v3.Schema$File> => {
+    const quantitiesDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
+    const productsByCategoriesPromise = getProductsForOnlineOrdering()
+    const servicePromise = connectDrive()
     const customerSheetId = config.googleSheetIdCustomers
     const docCustomersAndOther = await connectSpreadsheet(customerSheetId)
 
-    const customers = await getCustomerData(docCustomersAndOther)
-    const quantitiesData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
-    const productsByCategories = await getProductsForOnlineOrdering()
-    const nonLocalProductsPackagings = await getNonLocalProductsPackaging(docCustomersAndOther)
+    const customersPromise = getCustomerData(docCustomersAndOther)
+    const nonLocalProductsPackagingsPromise = getNonLocalProductsPackaging(docCustomersAndOther)
+    const productsByCategories = await productsByCategoriesPromise
+    const nonLocalProductsPackagings = await nonLocalProductsPackagingsPromise
     const products = [] as ProductData[]
     const nonLocalProducts = [] as NonLocalProductData[]
+    const quantitiesData = await quantitiesDataPromise
 
     Object.keys(productsByCategories).forEach(cat => {
       if(cat.endsWith(' hors coopérative')) {
@@ -56,15 +60,7 @@ export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceS
         })
       } else {
         productsByCategories[cat].forEach(product => {
-          const producerQuantities = quantitiesData.productQuantities[product.id] ? quantitiesData.productQuantities[product.id].producerQuantities : {}
-          const plannedCropsQuantities = quantitiesData.productQuantitiesPlannedCrops[product.id] ? quantitiesData.productQuantitiesPlannedCrops[product.id].producerQuantities : {}
-          const inStockQuantity = (typeof quantitiesData.productQuantitiesInStock[product.id] === 'number') ? quantitiesData.productQuantitiesInStock[product.id] as number : 0
-
-          const quantity = Object.keys(producerQuantities).reduce<number>((acc, producerId) => 
-            acc + (typeof producerQuantities[Number(producerId)] === 'number' ? producerQuantities[Number(producerId)] as number : 0), 0) +
-            Object.keys(plannedCropsQuantities).reduce((acc, producerId) => 
-            acc + (typeof plannedCropsQuantities[Number(producerId)] === 'number' ? plannedCropsQuantities[Number(producerId)] as number : 0), 0) +
-            inStockQuantity
+          const quantity = calculateQuantity(quantitiesData, product.id)
 
           if(quantity > 0) {
             products.push({
@@ -80,35 +76,86 @@ export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceS
       }
     })
 
+    const customers = await customersPromise
+
     const salesCycle = {products, nonLocalProducts, customers, availableDeliveryTimes,
       deliveryDate, creationDate: new Date(), deadline }
 
-    const service = await connectDrive()
+    const createVolumesFilePromise = createVolumesFile(salesCycle)
+    const service = await servicePromise
     const result = await createRemoteFile(service, salesCycle, config.workingFileName, config.workingFolderName)
-    await createVolumesFile(salesCycle)
+    await createVolumesFilePromise
     return result
 }
 
 export const updateCustomers = async() : Promise<void> => {
+  const dataFileContentPromise = getDataFileContent()
   const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
 
-  const customers = await getCustomerData(docCustomersAndOther)
-  const currentContent = JSON.parse(await getDataFileContent()) as SalesCycle
-
-
+  const customersPromise = getCustomerData(docCustomersAndOther)
+  const dataFileContent = await dataFileContentPromise
+  if(!dataFileContent) {
+    throw new Error('Could not load Campaign')
+  }
+  const currentContent = JSON.parse(dataFileContent) as SalesCycle
+  const customers = await customersPromise
+  
   await updateDataFile({ ...currentContent, ...{customers}})
+}
+
+// Will NOT remove the product when they have been archived in Odoo
+export const updateProducts = async(sourceSheetId: number) : Promise<void> => {
+  const quantitiesPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
+  const productsPromise = getProductsForOnlineOrdering()
+  const dataFileContent = await getDataFileContent()
+  if(!dataFileContent) {
+    throw new Error('Could not load Campaign')
+  }
+  const currentContent = JSON.parse(dataFileContent) as SalesCycle
+  const products = await productsPromise
+  const quantities = await quantitiesPromise
+  const onlineProductsMap = {} as {[id: number]: ProductData}
+  currentContent.products.forEach(product => onlineProductsMap[product.id] = product)
+
+  Object.keys(products).forEach(cat => {
+    products[cat].forEach(odooProduct => {
+      const productToUpdate = onlineProductsMap[odooProduct.id]
+      if(!productToUpdate) {
+        // add product that were added to Odoo
+        const quantity = calculateQuantity(quantities, odooProduct.id)
+        if(quantity > 0) {
+          currentContent.products.push(<ProductData>{
+            id: odooProduct.id,
+            name: odooProduct.name,
+            price: odooProduct.sellPrice,
+            unit: odooProduct.unit,
+            category: cat,
+            quantity
+          })
+        }
+      } else {
+        // Update date from Odoo and quantities sheet
+        productToUpdate.name = odooProduct.name
+        productToUpdate.price = odooProduct.sellPrice
+        productToUpdate.unit = odooProduct.unit
+        productToUpdate.quantity = calculateQuantity(quantities, odooProduct.id)
+      } 
+    })
+  })
+
+  await updateDataFile(currentContent)
 }
 
 const updateDataFile = async(newContent: SalesCycle): Promise<void> => {
   const service = await connectDrive()
   const fileId = await getDataFileId(service)
-  updateFile(service, fileId, newContent)
+  return updateFile(service, fileId, newContent)
 }
 
 const getDataFileId = async(service: drive_v3.Drive): Promise<string> => {
   const workingFolder = await getWorkingFolder(service, config.workingFolderName)
 
-  return await getFileId(service, config.workingFileName, workingFolder.id!)
+  return getFileId(service, config.workingFileName, workingFolder.id!)
 }
 
 export const getDataFileContent = async (): Promise<string> => {
@@ -116,7 +163,7 @@ export const getDataFileContent = async (): Promise<string> => {
   const dataFileId = await getDataFileId(service)
   
   if(!dataFileId){
-    throw new Error(`Remote working file ${config.workingFileName} not found`)
+    return ''
   }
 
   return getFileContent(service, dataFileId!)

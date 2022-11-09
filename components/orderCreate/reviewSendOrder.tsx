@@ -23,7 +23,7 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCusto
     }, 0)
     const totalHtva = totalProductsHtva + totalNonLocalProductsHtva
     return <Stack alignSelf="stretch" alignItems="stretch" spacing={1}>
-        <Button sx={{ alignSelf:"center" }} onClick={prev}>Etape précédente</Button>
+        <Button sx={{ alignSelf:"center" }} variant="outlined" onClick={prev}>Etape précédente</Button>
         <Typography variant="h5">Passez votre commande en revue</Typography>
         <OrderLinesSummary order={customer.order!} enrichedSalesCycle={enrichedSalesCycle} />
         <OrderSummary totalHtva={totalHtva} />

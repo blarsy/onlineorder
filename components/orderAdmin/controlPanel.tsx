@@ -6,7 +6,7 @@ import * as yup from 'yup'
 import { ConnectionData } from '../../lib/common'
 import OrdersFollowup from './ordersFollowup'
 import CustomerLinks from './customerLinks'
-import DataFiles from './dataFiles'
+import Campaign from './campaign'
 import QuantitiesSheets from './quantitiesSheets'
 
 yup.setLocale({
@@ -29,7 +29,7 @@ const ControlPanel = ({connectionData}: Props) => {
             content = <QuantitiesSheets connectionData={connectionData} />
             break
         case 1:
-            content = <DataFiles connectionData={connectionData} />
+            content = <Campaign connectionData={connectionData} />
             break
         case 2:
             content = <OrdersFollowup />

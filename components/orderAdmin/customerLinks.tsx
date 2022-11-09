@@ -19,7 +19,7 @@ const CustomerLinks = () => {
         load()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-    return <Loader loading={customersState.loading} error={customersState.error} initial={false}>
+    return <Loader loading={customersState.loading} error={customersState.error}>
         <Box display="flex" flexDirection="column">
             { customersState.customers.map(customer => <Link key={customer.slug} href={`${window.location.origin}/${customer.slug}`}>{customer.customerName}</Link> )}
         </Box>

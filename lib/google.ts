@@ -1,3 +1,4 @@
+import { GaxiosPromise, GaxiosResponse } from 'gaxios'
 import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3, sheets_v4 } from 'googleapis'
@@ -89,7 +90,7 @@ export const getOrCreateFolder = async (service: drive_v3.Drive, folderName: str
 }
 
 export const updateFile = async (service: drive_v3.Drive, fileId: string, content: object): Promise<void> => {
-    const res = await service.files.update({
+    await service.files.update({
         fileId: fileId,
         media:{
           body: Readable.from([JSON.stringify(content)])

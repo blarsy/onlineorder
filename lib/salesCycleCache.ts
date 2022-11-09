@@ -24,7 +24,7 @@ let data = null as EnrichedSalesCycle | null
 
 export const getData = async (): Promise<EnrichedSalesCycle> => {
     if(!data) {
-        const res= await axios.get('/api/orderweek')
+        const res= await axios.get('/api/campaign')
         if(res.status === 200){
             const salesCycle = res.data as SalesCycle
             // Comes as a valid ISO string, but still only a string, so cheap trick: convert it here

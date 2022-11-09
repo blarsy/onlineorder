@@ -1,4 +1,4 @@
-import { Box, Typography, Stack } from "@mui/material"
+import { Box, Typography, Stack, Button } from "@mui/material"
 import {
     Form,
     Formik,
@@ -13,98 +13,101 @@ import ProductsOrderTable from "./productsOrderTable"
 import Submit from "../form/submit"
 import OrderSummary from "./orderSummary"
 
-const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {
+const EditOrderLines = ({ enrichedSalesCycle, customer, next, save, prev }: OrderStepProps) => {
     const [saveQuantitiesError, setSaveQuantitiesError] = useState('')
-    return <Formik
-        initialValues={getInitialValues(enrichedSalesCycle, customer.order)}
-        validationSchema={ yup.object(getValidationSchema(enrichedSalesCycle)) }
-        onSubmit={async (values) => {
-            try {
-                const order = customer.order || {} as OrderData
-                order.quantities = []
-                order.quantitiesNonLocal = []
-                Object.keys(values).forEach(ctrlId => {
-                    const id = ctrlId.toString()
-                    if(values[id] != 0) {
-                        if(ctrlId.startsWith('nl')){
-                            const id = Number(ctrlId.substring(2))
-                            const quantityBeingAdded = {
-                                productId: id,
-                                quantity: Number(values[ctrlId]),
+    return <Box display="flex" flexDirection="column" alignItems="center">
+            <Button variant="outlined" onClick={prev}>Etape précédente</Button>
+            <Formik
+                initialValues={getInitialValues(enrichedSalesCycle, customer.order)}
+                validationSchema={ yup.object(getValidationSchema(enrichedSalesCycle)) }
+                onSubmit={async (values) => {
+                    try {
+                        const order = customer.order || {} as OrderData
+                        order.quantities = []
+                        order.quantitiesNonLocal = []
+                        Object.keys(values).forEach(ctrlId => {
+                            const id = ctrlId.toString()
+                            if(values[id] != 0) {
+                                if(ctrlId.startsWith('nl')){
+                                    const id = Number(ctrlId.substring(2))
+                                    const quantityBeingAdded = {
+                                        productId: id,
+                                        quantity: Number(values[ctrlId]),
+                                    }
+            
+                                    order.quantitiesNonLocal.push(quantityBeingAdded)
+                                } else {
+                                    const id = Number(ctrlId)
+                                    const quantityBeingAdded = {
+                                        productId: id,
+                                        quantity: Number(values[id])
+                                    }
+            
+                                    order.quantities.push(quantityBeingAdded)
+                                }
                             }
-     
-                            order.quantitiesNonLocal.push(quantityBeingAdded)
+                        })
+                        const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
+                        if(error) {
+                            setSaveQuantitiesError(error)
                         } else {
-                            const id = Number(ctrlId)
-                            const quantityBeingAdded = {
-                                productId: id,
-                                quantity: Number(values[id])
-                            }
-     
-                            order.quantities.push(quantityBeingAdded)
+                            next!()
+                        }
+                    } catch(e: any) {
+                        setSaveQuantitiesError(e.toString())
+                    }
+                }}>
+                {({ isSubmitting, getFieldProps, errors, touched, values }) => {
+                let totalHtva = 0
+                Object.keys(values).forEach(ctrlId => {
+                    if(Number(values[Number(ctrlId)]) != 0) {
+                        if(ctrlId.startsWith('nl')) {
+                            const id = Number(ctrlId.substring(2))
+                            totalHtva += enrichedSalesCycle.nonLocalProductsById[id].price * 
+                                Number(values[ctrlId]) * 
+                                Number(enrichedSalesCycle.nonLocalProductsById[id].packaging)
+                        } else {
+                            totalHtva += enrichedSalesCycle.productsById[Number(ctrlId)].product.price * Number(values[Number(ctrlId)])
                         }
                     }
                 })
-                const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
-                if(error) {
-                    setSaveQuantitiesError(error)
-                } else {
-                    next!()
-                }
-            } catch(e: any) {
-                setSaveQuantitiesError(e.toString())
-            }
-        }}>
-        {({ isSubmitting, getFieldProps, errors, touched, values }) => {
-        let totalHtva = 0
-        Object.keys(values).forEach(ctrlId => {
-            if(Number(values[Number(ctrlId)]) != 0) {
-                if(ctrlId.startsWith('nl')) {
-                    const id = Number(ctrlId.substring(2))
-                    totalHtva += enrichedSalesCycle.nonLocalProductsById[id].price * 
-                        Number(values[ctrlId]) * 
-                        Number(enrichedSalesCycle.nonLocalProductsById[id].packaging)
-                } else {
-                    totalHtva += enrichedSalesCycle.productsById[Number(ctrlId)].product.price * Number(values[Number(ctrlId)])
-                }
-            }
-        })
-        return (<Box component={Form} alignSelf="center" display="flex" flexDirection="column" gap="1rem">
-            { Object.keys(enrichedSalesCycle.productsByCategory).map((category, catIdx)=> {
-                return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
-                    <Typography variant="h5">{category}</Typography>
-                    <ProductsOrderTable 
-                        productIds={enrichedSalesCycle.productsByCategory[category]}
-                        productsById={enrichedSalesCycle.productsById}
-                        touched={touched}
-                        errors={errors}
-                        getFieldProps={getFieldProps}
-                        values={values}/>
-                </Box>
-            })
-            }
-            { Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category, catIdx)=> {
-                return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
-                    <Typography variant="h5">{category} - Origine hors coopérative (bio non-local)</Typography>
-                    <NonLocalProductsOrderTable 
-                        products={enrichedSalesCycle.nonLocalProductsByCategory[category]}
-                        touched={touched}
-                        errors={errors}
-                        getFieldProps={getFieldProps}
-                        values={values}/>
-                </Box>
-            })
-            }
+                return (<Box component={Form} alignSelf="center" display="flex" flexDirection="column" gap="1rem">
+                    { Object.keys(enrichedSalesCycle.productsByCategory).map((category, catIdx)=> {
+                        return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
+                            <Typography variant="h5">{category}</Typography>
+                            <ProductsOrderTable 
+                                productIds={enrichedSalesCycle.productsByCategory[category]}
+                                productsById={enrichedSalesCycle.productsById}
+                                touched={touched}
+                                errors={errors}
+                                getFieldProps={getFieldProps}
+                                values={values}/>
+                        </Box>
+                    })
+                    }
+                    { Object.keys(enrichedSalesCycle.nonLocalProductsByCategory).map((category, catIdx)=> {
+                        return <Box key={catIdx} margin="1rem 0 1rem 0" display="flex" flexDirection="column" alignItems="center">
+                            <Typography variant="h5">{category} - Origine hors coopérative (bio non-local)</Typography>
+                            <NonLocalProductsOrderTable 
+                                products={enrichedSalesCycle.nonLocalProductsByCategory[category]}
+                                touched={touched}
+                                errors={errors}
+                                getFieldProps={getFieldProps}
+                                values={values}/>
+                        </Box>
+                    })
+                    }
 
-            <OrderSummary totalHtva={totalHtva}/>
-            <Stack alignItems="center">
-                {Object.keys(errors).length > 0 && <Typography variant="overline" color="error.main">Il y a des erreurs dans les quantités entrées. Veuillez les corriger avant de pouvoir valider la commande.</Typography>}
-                {Object.keys(touched).length > 0 && totalHtva === 0 && <Typography variant="overline" color="error.main">Cette commande est vide.</Typography>}
-                <Submit disabled={Object.keys(errors).length > 0 || totalHtva === 0} label="Suivant" isSubmitting={isSubmitting} submitError={saveQuantitiesError} />
-            </Stack>
-        </Box>)
-        }}
-    </Formik>
+                    <OrderSummary totalHtva={totalHtva}/>
+                    <Stack alignItems="center">
+                        {Object.keys(errors).length > 0 && <Typography variant="overline" color="error.main">Il y a des erreurs dans les quantités entrées. Veuillez les corriger avant de pouvoir valider la commande.</Typography>}
+                        {Object.keys(touched).length > 0 && totalHtva === 0 && <Typography variant="overline" color="error.main">Cette commande est vide.</Typography>}
+                        <Submit disabled={Object.keys(errors).length > 0 || totalHtva === 0} label="Suivant" isSubmitting={isSubmitting} submitError={saveQuantitiesError} />
+                    </Stack>
+                </Box>)
+                }}
+            </Formik>
+        </Box>
 }
 
 

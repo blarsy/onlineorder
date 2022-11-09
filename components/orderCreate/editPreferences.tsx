@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Button, Stack } from "@mui/material"
+import { Box, Button, Stack, Typography } from "@mui/material"
 import {
     Form,
     Formik,
@@ -10,10 +10,10 @@ import DeliveryPreferenceInput from "./deliveryPreferenceInput"
 import { makePrefCtrlId, OrderStepProps } from "../../lib/formCommon"
 import Submit from "../form/submit"
 
-const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: OrderStepProps) => {
+const EditPreferences = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {
     const [savePrefsError, setSavePrefsError] = useState('')
-    return <Stack alignSelf="stretch">
-        <Button sx={{ alignSelf:"center" }} onClick={prev}>Etape précédente</Button>
+    return <Stack alignItems="stretch" sx={{maxWidth: 'sm'}}>
+        <Typography variant="overline">Voici nos heures de livraison. Nous ferons de notre mieux pour vous livrer dans les créneaux que vous sélectionnez ci-dessous:</Typography>
         <Formik initialValues={createInitialValues(customer.order!)}     
             validationSchema={yup.object(createValidationSchema(customer.order!))}
             onSubmit={async ( values ) => {
@@ -37,7 +37,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
             {({ isSubmitting, getFieldProps, errors, touched, values }) => {
                 return <Box component={Form}>
                     <DeliveryPreferenceInput values={values} deliveryTimes={customer.order!.preferredDeliveryTimes} getFieldProps={getFieldProps} errors={errors} touched={touched}/>
-                    <Submit isSubmitting={isSubmitting} disabled={Object.keys(errors).length > 0} label="Passer en revue" submitError={savePrefsError}/>
+                    <Submit isSubmitting={isSubmitting} disabled={Object.keys(errors).length > 0} label="Etape suivante" submitError={savePrefsError}/>
                 </Box>
             }}
         </Formik>

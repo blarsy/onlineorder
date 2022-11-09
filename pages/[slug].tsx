@@ -96,7 +96,7 @@ const Order = () => {
         }
     }
 
-    return <Loader loading={salesCycleState.loading} error={salesCycleState.error} initial={false}>
+    return <Loader loading={salesCycleState.loading} error={salesCycleState.error}>
         { content }
     </Loader>
 }

@@ -1,9 +1,7 @@
 import { OrderData, OrderedVolumes, SalesCycle } from "./common"
 import { connectDrive, createRemoteFile, getFileContent, getFileId, getWorkingFolder, updateFile } from "./google"
 import { handleOrderedVolumes } from "./orderVolumes"
-
-const workingFolderName = process.env.WORKING_FOLDER_NAME!
-const volumesFileName = process.env.VOLUMES_FILE_NAME!
+import config from './serverConfig'
 
 let locked = false
 const acquireLock = async (): Promise<void> => {
@@ -21,9 +19,9 @@ let volumesFileId: string
 const getVolumesFileId = async () => {
     if(!volumesFileId) {
         const service = await connectDrive()
-        const workingFolder = await getWorkingFolder(service, workingFolderName)
+        const workingFolder = await getWorkingFolder(service, config.workingFolderName)
         
-        volumesFileId = await getFileId(service, volumesFileName, workingFolder.id!)
+        volumesFileId = await getFileId(service, config.volumesFileName, workingFolder.id!)
     }
     return volumesFileId
 }
@@ -37,6 +35,8 @@ export const getOrderVolumes = async (): Promise<OrderedVolumes> => {
 
 export const create = async (salesCycle: SalesCycle):Promise<void> => {
     const initialStock = {} as OrderedVolumes
+    const servicePromise = connectDrive()
+
 
     salesCycle.products.forEach(product => {
         initialStock[product.id] = {
@@ -48,8 +48,8 @@ export const create = async (salesCycle: SalesCycle):Promise<void> => {
         }
     })
 
-    const service = await connectDrive()
-    await createRemoteFile(service, initialStock, volumesFileName, workingFolderName)
+    const service = await servicePromise
+    await createRemoteFile(service, initialStock, config.volumesFileName, config.workingFolderName)
 }
 
 export const registerOrderQuantities = async (order: OrderData, customerSlug: string): Promise<void> => {
@@ -61,7 +61,7 @@ export const registerOrderQuantities = async (order: OrderData, customerSlug: st
         let content = JSON.parse(await getFileContent(service, fileId)) as OrderedVolumes
         content = handleOrderedVolumes(order, content, customerSlug)
 
-        await updateFile(service, fileId, content)
+        return updateFile(service, fileId, content)
     } finally {
         releaseLock()
     }

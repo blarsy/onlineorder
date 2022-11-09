@@ -42,8 +42,8 @@ const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer, refreshQuantit
     }
 
     return <Stack alignItems="center" direction="column" justifyContent="flex-begin">
-        { step === 0 && <EditOrderLines enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next}/>}
-        { step === 1 && <EditPreferences enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next} prev={prevWithQuantitiesRefresh} />}
+        { step === 0 && <EditPreferences enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next} />}
+        { step === 1 && <EditOrderLines enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next}  prev={prevWithQuantitiesRefresh}/>}
         { step === 2 && <ReviewSendOrder enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} prev={prev} mutateCustomer={mutateCustomer} />}
     </Stack>
 }

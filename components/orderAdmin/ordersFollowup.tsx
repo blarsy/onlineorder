@@ -37,7 +37,7 @@ const OrdersFollowup = () => {
         load()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-    return <Loader error={ordersState.error} loading={ordersState.loading} initial={false}>
+    return <Loader error={ordersState.error} loading={ordersState.loading}>
         <Box display="flex" flexDirection="row" flexWrap="wrap" alignSelf="stretch">
             <Box sx={{ flex: '0 0 10%' }} />
             <Typography sx={{ flex: '0 0 25%' }} variant="overline">Date confirmation</Typography>

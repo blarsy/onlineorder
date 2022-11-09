@@ -1,6 +1,6 @@
-import { FormControl, InputLabel, MenuItem, Select } from '@mui/material'
+import { FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material'
 import axios from 'axios'
-import { FieldInputProps } from 'formik'
+import { ErrorMessage, FieldInputProps } from 'formik'
 import { useState, useEffect } from 'react'
 import Loader from '../form/loader'
 
@@ -22,7 +22,7 @@ const SheetsSelect = ({ fieldProps }: Props) => {
         }
         loadSheets()
     }, [])
-    return (<Loader loading={sheets.loading} error={sheets.error} initial={false}>
+    return (<Loader loading={sheets.loading} error={sheets.error}>
         <FormControl>
             <InputLabel id="labelsheet">Source</InputLabel>
             <Select
@@ -33,6 +33,7 @@ const SheetsSelect = ({ fieldProps }: Props) => {
                     sheets.sheets && sheets.sheets.map(sheet => <MenuItem key={sheet.id} value={sheet.id}>{sheet.title}</MenuItem>)
                 }
             </Select>
+            <Typography variant="body1" color="error"><ErrorMessage name={fieldProps.name} /></Typography>
         </FormControl>
     </Loader>)
 }

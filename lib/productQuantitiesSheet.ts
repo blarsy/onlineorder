@@ -28,11 +28,11 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
-export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number) => {
+export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number, copyPlannedCropsOnly = true) => {
     let initialData = undefined as AvailableProductsSnapshot | undefined
     let initialDataPromise = undefined
     if(sourceSheetId) {
-        initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, true)
+        initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, copyPlannedCropsOnly)
     }
     const newSheetId = await createNewSheet(
         config.googleSheetIdProducts, 
@@ -556,10 +556,21 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     })
 }
 
+export const calculateQuantity = (quantities: AvailableProductsSnapshot, productId: number): number => {
+    const producerQuantities = quantities.productQuantities[productId] ? quantities.productQuantities[productId].producerQuantities : {}
+    const plannedCropsQuantities = quantities.productQuantitiesPlannedCrops[productId] ? quantities.productQuantitiesPlannedCrops[productId].producerQuantities : {}
+    const inStockQuantity = (typeof quantities.productQuantitiesInStock[productId] === 'number') ? quantities.productQuantitiesInStock[productId] as number : 0
+
+    return Object.keys(producerQuantities).reduce<number>((acc, producerId) => 
+        acc + (typeof producerQuantities[Number(producerId)] === 'number' ? producerQuantities[Number(producerId)] as number : 0), 0) +
+        Object.keys(plannedCropsQuantities).reduce((acc, producerId) => 
+        acc + (typeof plannedCropsQuantities[Number(producerId)] === 'number' ? plannedCropsQuantities[Number(producerId)] as number : 0), 0) +
+        inStockQuantity
+}
+
 export const parseProductSheet = async (spreadsheetId: string, sheetId: number, plannedCropsOnly?: boolean): Promise<AvailableProductsSnapshot> => {
     const sheets = await getSheets()
     const productSheetInput = await getProductSheetInput()
-    const spreadSheet = await sheets.spreadsheets.get({ spreadsheetId })
     const res = await sheets.spreadsheets.getByDataFilter({ 
         spreadsheetId, requestBody: {
             dataFilters: [{
