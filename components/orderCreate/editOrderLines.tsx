@@ -6,8 +6,8 @@ import {
 import { useState } from "react"
 import * as yup from 'yup'
 import { OrderData } from "../../lib/common"
-import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
-import { OrderStepProps, ProductsQuantities } from "../../lib/formCommon"
+import { EnrichedSalesCycle } from "../../lib/form/salesCycleCache"
+import { OrderStepProps, ProductsQuantities } from "../../lib/form/formCommon"
 import NonLocalProductsOrderTable from "../orderCreate/nonLocalProductsOrderTable"
 import ProductsOrderTable from "./productsOrderTable"
 import Submit from "../form/submit"

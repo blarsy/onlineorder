@@ -1,11 +1,11 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
-import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime } from './common'
+import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime } from '../common'
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
 import { create as createVolumesFile } from './volumesFile'
-import config from './serverConfig'
+import config from '../serverConfig'
 
 const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> => {
     const sheet = doc.sheetsByTitle['Clients']

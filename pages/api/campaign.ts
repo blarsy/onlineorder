@@ -1,8 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { utils } from 'ethers'
-import { createDataFile, getDataFileContent, updateCustomers, updateProducts } from '../../lib/dataFile'
+import { createDataFile, getDataFileContent, updateCustomers, updateProducts } from '../../lib/data/dataFile'
 import { handleException } from '../../lib/request'
 import config from '../../lib/serverConfig'
+import queue from '../../lib/tasksQueue/queue'
+import Task from '../../lib/tasksQueue/task'
+import { AvailableDeliveryTime } from '../../lib/common'
+import { TaskNames } from '../../lib/form/formCommon'
 
 type Data = {
   error: string
@@ -27,7 +31,11 @@ export default async function handler(
                 } else if (!req.body.sheetId || isNaN(Number(req.body.sheetId)) ) {
                     res.status(500).json({ error: 'Invalid or missing sheetId' })
                 }{
-                    await createDataFile(new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId, req.body.deliveryTimes)
+                    queue.enqueue(
+                        new Task([new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId, req.body.deliveryTimes], 
+                        async (args: any[]) => {
+                            await createDataFile(args[0] as Date, args[1] as Date, args[2] as number, args[3] as AvailableDeliveryTime[])
+                        }, TaskNames.CreateCampaign))
                     res.status(200).json({ error: '' })
                 }
             }
@@ -51,7 +59,11 @@ export default async function handler(
         } else {
             if(req.body.customers) {
                 try {
-                    await updateCustomers()
+                    queue.enqueue(
+                        new Task([], 
+                        async (args: any[]) => {
+                            await updateCustomers()
+                        }, TaskNames.UpdateCustomers))
                     res.status(200).json({error: ''})
                 } catch (e) {
                     handleException(e, res)
@@ -61,7 +73,11 @@ export default async function handler(
                     res.status(500).json({ error: 'Missing source sheet Id'})
                 } else {
                     try {
-                        await updateProducts(req.body.sheetId)
+                        queue.enqueue(
+                            new Task([req.body.sheetId], 
+                            async (args: any[]) => {
+                                await updateProducts(args[0] as number)
+                            }, TaskNames.UpdateProducts))
                         res.status(200).json({error: ''})
                     } catch (e) {
                         handleException(e, res)

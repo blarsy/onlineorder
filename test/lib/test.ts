@@ -1,7 +1,7 @@
 import { createProductsSheet, createNewSheet, parseProductSheet, createBlankQuantitiesSheet } from "../../lib/productQuantitiesSheet"
 import creds from '../../google-creds.json'
-import { getLocalProductsByCategories, getProductsForOnlineOrdering } from "../../lib/odoo"
-import { createDataFile } from "../../lib/dataFile"
+import { getLocalProductsByCategories, getProductsForOnlineOrdering } from "../../lib/data/odoo"
+import { createDataFile } from "../../lib/data/dataFile"
 import config, { setConfig } from '../../lib/serverConfig'
 jest.setTimeout(20000)
 

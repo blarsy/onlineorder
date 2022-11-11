@@ -2,7 +2,7 @@ import { Checkbox, FormControlLabel, Typography } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
 import { Box, Stack } from "@mui/system"
 import { DeliveryTime, DeliveryTimes } from "../../lib/common"
-import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, DeliveryPrefs } from "../../lib/formCommon"
+import { easyDate, getDeliveryTimeLabel, makePrefCtrlId, DeliveryPrefs } from "../../lib/form/formCommon"
 
 interface Props {
     deliveryTimes: DeliveryTime[],

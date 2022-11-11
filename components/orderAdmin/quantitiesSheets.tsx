@@ -12,7 +12,7 @@ import axios from 'axios'
 import { ConnectionData } from "../../lib/common"
 import { findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
-import '../../lib/formCommon'
+import '../../lib/form/formCommon'
 import SheetsSelect from './sheetsSelect'
 
 interface Props {

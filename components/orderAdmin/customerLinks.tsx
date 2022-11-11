@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Box, Link } from "@mui/material"
 import { CustomerData } from "../../lib/common"
-import { getData } from '../../lib/salesCycleCache'
+import { getData } from '../../lib/form/salesCycleCache'
 import Loader from '../form/loader'
 
 const CustomerLinks = () => {

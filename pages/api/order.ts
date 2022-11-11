@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next"
 import { OrderCustomer, OrderData } from "../../lib/common"
-import { getOrder, saveOrder, getOrderCustomers } from "../../lib/orderFile"
+import { getOrder, saveOrder, getOrderCustomers } from "../../lib/data/orderFile"
 import { handleException } from "../../lib/request"
 
 export default async function handler(

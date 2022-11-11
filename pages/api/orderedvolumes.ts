@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { OrderedVolumes } from "../../lib/common";
 import { handleException } from "../../lib/request";
-import { getOrderVolumes } from "../../lib/volumesFile";
+import { getOrderVolumes } from "../../lib/data/volumesFile";
 
 export default async function handler(
     req: NextApiRequest,

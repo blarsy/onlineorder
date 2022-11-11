@@ -1,8 +1,8 @@
-import { OrderCustomer, OrderData, OrderStatus, SalesCycle, CustomerData } from "./common";
+import { OrderCustomer, OrderData, OrderStatus, SalesCycle, CustomerData } from "../common";
 import { getDataFileContent } from "./dataFile";
 import { connectDrive, createOrReplaceOrderFile, getOrCreateFolder, getWorkingFolder, getFileContent, getFileId, getOrdersInFolder } from "./google"
 import { registerOrderQuantities } from "./volumesFile"
-import config from './serverConfig'
+import config from '../serverConfig'
 import { drive_v3 } from "googleapis";
 
 const getCampaignFolderId = async(delivery: Date) : Promise<[string, drive_v3.Drive]> => {

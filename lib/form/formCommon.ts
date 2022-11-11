@@ -1,5 +1,5 @@
 import { setLocale } from 'yup'
-import { CustomerData, DeliveryTimes, OrderData } from './common'
+import { CustomerData, DeliveryTimes, OrderData } from '../common'
 import { EnrichedSalesCycle } from './salesCycleCache'
 
 export const VATFOOD = 0.06
@@ -59,4 +59,11 @@ export const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
   // dates come as ISO strings from Api, but we want them typed as Dates
   orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
   return orderFromApi
+}
+
+export const TaskNames = {
+  CreateCampaign: 'Creation d\'une nouvelle campagne',
+  CreateQuantitiesSheet: 'Création d\'un tableau de quantités',
+  UpdateCustomers: 'Mise à jour clients',
+  UpdateProducts: 'Mise à jour produits'
 }

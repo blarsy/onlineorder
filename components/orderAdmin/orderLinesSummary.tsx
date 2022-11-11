@@ -1,6 +1,6 @@
 import { NonLocalProductData, OrderData, ProductData } from "../../lib/common"
 import { Stack, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Typography } from "@mui/material"
-import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
+import { EnrichedSalesCycle } from "../../lib/form/salesCycleCache"
 
 interface Props {
     order: OrderData,

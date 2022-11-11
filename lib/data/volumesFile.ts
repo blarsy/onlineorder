@@ -1,7 +1,7 @@
-import { OrderData, OrderedVolumes, SalesCycle } from "./common"
+import { OrderData, OrderedVolumes, SalesCycle } from "../common"
 import { connectDrive, createRemoteFile, getFileContent, getFileId, getWorkingFolder, updateFile } from "./google"
 import { handleOrderedVolumes } from "./orderVolumes"
-import config from './serverConfig'
+import config from '../serverConfig'
 
 let locked = false
 const acquireLock = async (): Promise<void> => {
@@ -30,7 +30,12 @@ export const getOrderVolumes = async (): Promise<OrderedVolumes> => {
     const service = await connectDrive()
     const fileId = await getVolumesFileId()
 
-    return (JSON.parse(await getFileContent(service, fileId))) as OrderedVolumes
+    const fileContent = await getFileContent(service, fileId)
+    if(!fileContent){
+        throw new Error('Could not get volumes file content')
+    }
+
+    return JSON.parse(fileContent) as OrderedVolumes
 }
 
 export const create = async (salesCycle: SalesCycle):Promise<void> => {

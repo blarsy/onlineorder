@@ -17,8 +17,8 @@ import { ConnectionData, SalesCycle } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
 import CreateCampaign from './createCampaign'
 import Loader from '../form/loader'
-import { getData } from '../../lib/salesCycleCache'
-import { easyDateTime } from '../../lib/formCommon'
+import { getData } from '../../lib/form/salesCycleCache'
+import { easyDateTime } from '../../lib/form/formCommon'
 
 interface Props {
     connectionData: ConnectionData

@@ -105,3 +105,31 @@ export interface OrderCustomer {
     order: OrderData,
     customer: CustomerData
 }
+
+export const errorToString = (error: any): string => {
+    console.log(error)
+    if(error instanceof Error) {
+        let message = error.message
+        if(typeof(error.message) === 'object'){
+            message = JSON.stringify(message)
+        }
+        return `message: ${message}, stack: ${error.stack}`
+    } else if(typeof(error) === 'object') {
+        return JSON.stringify(error)
+    } else {
+        return error.toString()
+    }
+}
+
+export enum TaskStatus {
+    created,
+    executing,
+    finished
+}
+
+export interface TaskLogEntry {
+    date: Date,
+    name: string,
+    status: TaskStatus,
+    error?: string
+}

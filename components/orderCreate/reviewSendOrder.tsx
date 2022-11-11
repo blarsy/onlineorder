@@ -5,7 +5,7 @@ import {
     Formik,
   } from 'formik'
 import { OrderStatus } from "../../lib/common"
-import { OrderStepProps } from "../../lib/formCommon"
+import { OrderStepProps } from "../../lib/form/formCommon"
 import Submit from "../form/submit"
 import OrderLinesSummary from "../orderAdmin/orderLinesSummary"
 import OrderSummary from "./orderSummary"

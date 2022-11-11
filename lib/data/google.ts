@@ -1,10 +1,9 @@
-import { GaxiosPromise, GaxiosResponse } from 'gaxios'
 import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { google, drive_v3, sheets_v4 } from 'googleapis'
 import { Readable } from 'stream'
-import { OrderData } from './common'
-import config from './serverConfig'
+import { OrderData } from '../common'
+import config from '../serverConfig'
 
 export const getSheets = () : sheets_v4.Sheets => {
     const auth = new google.auth.JWT(config.googleServiceAccount, undefined, config.googlePrivateKey, 'https://www.googleapis.com/auth/spreadsheets')

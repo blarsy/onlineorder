@@ -1,6 +1,6 @@
 import { Box, Paper, Typography } from "@mui/material"
 import { OrderData } from "../../lib/common"
-import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
+import { EnrichedSalesCycle } from "../../lib/form/salesCycleCache"
 import DeliveryPreferences from "../orderCreate/deliveryPreferences"
 
 const ALT_COLOR = '#CCC'

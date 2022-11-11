@@ -8,6 +8,7 @@ import OrdersFollowup from './ordersFollowup'
 import CustomerLinks from './customerLinks'
 import Campaign from './campaign'
 import QuantitiesSheets from './quantitiesSheets'
+import Tasks from './tasks'
 
 yup.setLocale({
     mixed: {
@@ -47,6 +48,7 @@ const ControlPanel = ({connectionData}: Props) => {
             <Tab label="Suivi commandes" />
             <Tab label="Liens commande clients" />
         </Tabs>
+        <Tasks />
         { content }
     </LocalizationProvider>
 }

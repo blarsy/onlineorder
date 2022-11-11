@@ -1,5 +1,5 @@
 import { Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material"
-import { VATFOOD } from "../../lib/formCommon"
+import { VATFOOD } from "../../lib/form/formCommon"
 
 interface Props {
     totalHtva: number

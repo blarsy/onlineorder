@@ -1,7 +1,7 @@
 import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
-import { ProductsQuantities } from "../../lib/formCommon"
-import { ProductsById } from "../../lib/salesCycleCache"
+import { ProductsQuantities } from "../../lib/form/formCommon"
+import { ProductsById } from "../../lib/form/salesCycleCache"
 
 interface Props {
     productIds:  number[],

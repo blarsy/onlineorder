@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes, DeliveryTimes, AvailableDeliveryTime } from './common'
+import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes, DeliveryTimes, AvailableDeliveryTime } from '../common'
 
 type ProductsByCategory = {
     [category: string]: number[]

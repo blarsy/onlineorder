@@ -1,5 +1,5 @@
 import { OrderData, OrderStatus } from "../../lib/common"
-import { ordersIdentical } from "../../lib/orderVolumes"
+import { ordersIdentical } from "../../lib/data/orderVolumes"
 
 const makeOrder = (quantities: {
     productId: number;

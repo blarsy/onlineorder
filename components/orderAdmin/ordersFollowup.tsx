@@ -5,8 +5,8 @@ import ExpandIcon from '@mui/icons-material/ExpandMore'
 import CollapseIcon from '@mui/icons-material/ExpandLess'
 import { OrderCustomer, OrderStatus } from '../../lib/common'
 import Loader from "../form/loader"
-import { getOrderTotal, orderFromApiCallResult } from '../../lib/formCommon'
-import { EnrichedSalesCycle, getData } from '../../lib/salesCycleCache'
+import { getOrderTotal, orderFromApiCallResult } from '../../lib/form/formCommon'
+import { EnrichedSalesCycle, getData } from '../../lib/form/salesCycleCache'
 import OrderDetails from './orderDetails'
 
 const getStatusLabel = (status: OrderStatus): string => {

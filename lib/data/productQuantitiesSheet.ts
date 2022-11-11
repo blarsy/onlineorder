@@ -1,8 +1,8 @@
-import { getWeek } from './dateWeek'
-import { easyDate, easyDateTime } from './formCommon'
+import { getWeek } from '../dateWeek'
+import { easyDate, easyDateTime } from '../form/formCommon'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
-import config from './serverConfig'
+import config from '../serverConfig'
 
 interface ProductQuantities {
     [productId: number]:{

@@ -1,4 +1,4 @@
-import { OrderData, OrderedVolumes } from "./common"
+import { OrderData, OrderedVolumes } from "../common"
 
 export const ordersIdentical = (order: OrderData, previousOrderVersion: OrderData | null): boolean => {
     if(!previousOrderVersion) return false

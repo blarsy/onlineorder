@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { connectSpreadsheet } from '../../lib/google'
+import { connectSpreadsheet } from '../../lib/data/google'
 import { handleException } from '../../lib/request'
 import config from '../../lib/serverConfig'
 

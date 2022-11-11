@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { Stack } from "@mui/material"
 import { CustomerData } from "../../lib/common"
-import { EnrichedSalesCycle } from "../../lib/salesCycleCache"
-import '../../lib/formCommon'
+import { EnrichedSalesCycle } from "../../lib/form/salesCycleCache"
+import '../../lib/form/formCommon'
 import EditOrderLines from "./editOrderLines"
 import EditPreferences from "./editPreferences"
 import ReviewSendOrder from "./reviewSendOrder"
 import axios from "axios"
-import { orderFromApiCallResult } from "../../lib/formCommon"
+import { orderFromApiCallResult } from "../../lib/form/formCommon"
 
 interface Props {
     customer: CustomerData,

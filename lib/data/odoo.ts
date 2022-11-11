@@ -1,6 +1,6 @@
-import './types.d'
+//import './types'
 import Odoo from 'odoo-await'
-import config from './serverConfig'
+import config from '../serverConfig'
 
 export interface OdooProduct {
     name: string,

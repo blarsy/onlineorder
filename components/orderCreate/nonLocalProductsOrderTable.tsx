@@ -1,7 +1,7 @@
 import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField } from "@mui/material"
 import { FormikTouched, FormikErrors, FieldInputProps } from 'formik'
 import { NonLocalProductData } from "../../lib/common"
-import { ProductsQuantities } from "../../lib/formCommon"
+import { ProductsQuantities } from "../../lib/form/formCommon"
 
 interface Props {
     products: NonLocalProductData[],
