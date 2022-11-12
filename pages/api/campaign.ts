@@ -5,12 +5,12 @@ import { handleException } from '../../lib/request'
 import config from '../../lib/serverConfig'
 import queue from '../../lib/tasksQueue/queue'
 import Task from '../../lib/tasksQueue/task'
-import { AvailableDeliveryTime } from '../../lib/common'
+import { AvailableDeliveryTime, SalesCycle } from '../../lib/common'
 import { TaskNames } from '../../lib/form/formCommon'
 
 type Data = {
   error: string
-}
+} | SalesCycle
 
 export default async function handler(
   req: NextApiRequest,
@@ -44,11 +44,7 @@ export default async function handler(
         }
     } else if (req.method === 'GET') {
         try {
-            const file = await getDataFileContent()
-            if(!file){
-                res.status(500).json({ error: 'No campaign found' })
-            }
-            res.status(200).json(JSON.parse(file))
+            res.status(200).json(await getDataFileContent())
         } catch (e) {
             handleException(e, res)
         }

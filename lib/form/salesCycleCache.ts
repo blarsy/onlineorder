@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes, DeliveryTimes, AvailableDeliveryTime } from '../common'
+import { SalesCycle, ProductData, NonLocalProductData, OrderedVolumes, DeliveryTimes, AvailableDeliveryTime, restoreTypes } from '../common'
 
 type ProductsByCategory = {
     [category: string]: number[]
@@ -27,15 +27,7 @@ export const getData = async (): Promise<EnrichedSalesCycle> => {
         const res= await axios.get('/api/campaign')
         if(res.status === 200){
             const salesCycle = res.data as SalesCycle
-            // Comes as a valid ISO string, but still only a string, so cheap trick: convert it here
-            salesCycle.creationDate = new Date(salesCycle.creationDate)
-            salesCycle.deliveryDate = new Date(salesCycle.deliveryDate)
-            salesCycle.deadline = new Date(salesCycle.deadline)
-            salesCycle.availableDeliveryTimes = salesCycle.availableDeliveryTimes.map(adt => ({ 
-                day: new Date(adt.day),
-                times: adt.times.map(time => DeliveryTimes[time]) as unknown as DeliveryTimes[]
-            }))
-    
+            restoreTypes(salesCycle)
             data = enrichSalesCycle(salesCycle)
         } else {
             throw new Error(`Request failed with status ${res.status} : ${res.statusText}`)

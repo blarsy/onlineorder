@@ -16,6 +16,7 @@ export default {
 
 
 const customer: CustomerData = {
+    id: 234,
     title: '',
     email:'',
     slug: '',

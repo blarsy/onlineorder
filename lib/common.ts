@@ -44,6 +44,7 @@ export enum DeliveryTimes {
 }
 
 export interface OrderData {
+    id?: number,
     slug: string,
     status: OrderStatus,
     quantities: {
@@ -68,6 +69,7 @@ export interface DeliveryTime {
 }
 
 export interface CustomerData {
+    id: number,
     title: string,
     email: string,
     mobileNumber: string,
@@ -133,3 +135,47 @@ export interface TaskLogEntry {
     status: TaskStatus,
     error?: string
 }
+
+export const restoreTypes = (salesCycle: SalesCycle) => {
+    salesCycle.creationDate = new Date(salesCycle.creationDate)
+    salesCycle.deliveryDate = new Date(salesCycle.deliveryDate)
+    salesCycle.deadline = new Date(salesCycle.deadline)
+    salesCycle.availableDeliveryTimes = salesCycle.availableDeliveryTimes.map(adt => ({ 
+        day: new Date(adt.day),
+        times: adt.times.map(time => ensureDeliveryTime(time) )
+    }))
+}
+
+const ensureDeliveryTime = (value: string | DeliveryTimes): DeliveryTimes => {
+    if(typeof value === 'string') {
+        return Number(Object.keys(DeliveryTimes)[Object.values(DeliveryTimes).findIndex(val => val === value)]) as DeliveryTimes
+    } else {
+        return value as DeliveryTimes
+    }
+}
+
+export const displayDeliveryDayPrefs = (deliveryDate: DeliveryTime) => {
+    if(deliveryDate.times.some(time => time.checked)) {
+        const timeLabels = deliveryDate.times.filter(time => time.checked).map(time => getDeliveryTimeLabel(time.deliveryTime))
+        return `${easyDate(deliveryDate.day)} ${timeLabels.join(', ')}  `
+    } else {
+        return ''
+    }
+}
+export const getDeliveryTimeLabel = (deliveryTime : DeliveryTimes) => `${deliveryTime}-${Number(deliveryTime)+1}`
+
+const zeroPad = (num: number, places: number) => String(num).padStart(places, '0')
+const week = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
+export const easyDate = (date: Date) => `${week[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`
+export const easyDateTime = (date: Date) => `${week[date.getDay()]} ${zeroPad(date.getDate(), 2)}/${zeroPad((date.getMonth() + 1), 2)} ${zeroPad(date.getHours(), 2)}:${zeroPad(date.getMinutes(), 2)}`
+
+export const deliveryPrefsToString = (deliveryTimes: DeliveryTime[]): string => {
+    return `Préférences livraison :\n${deliveryTimes.map(deliveryDay => displayDeliveryDayPrefs(deliveryDay)).join('\n')}`
+}
+
+export const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
+    // dates come as ISO strings from Api, but we want them typed as Dates
+    orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
+    return orderFromApi
+}
+  

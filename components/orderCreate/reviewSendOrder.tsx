@@ -49,6 +49,7 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCusto
         }}>
         {({ isSubmitting, getFieldProps }) => {
             return <Stack spacing={1} component={Form}>
+                <Typography variant="overline">Avez-vous une note à communiquer à nos services concernant cette commande ?</Typography>
                 <TextField sx={{ width: '100%'}} minRows="3" {...getFieldProps('note')}/>
                 <Submit label="Confirmer la commande" isSubmitting={isSubmitting} submitError={confirmError}/>
             </Stack>}

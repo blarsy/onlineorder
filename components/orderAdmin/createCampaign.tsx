@@ -11,8 +11,7 @@ import {
 import * as yup from 'yup'
 import { addWorkingDays, findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
-import { easyDate, getDeliveryTimeLabel } from '../../lib/form/formCommon'
-import { ConnectionData, DeliveryTimes } from '../../lib/common'
+import { easyDate, getDeliveryTimeLabel, ConnectionData, DeliveryTimes } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
 
 interface Props {

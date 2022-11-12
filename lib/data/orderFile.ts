@@ -16,17 +16,12 @@ export const saveOrder = async (order : OrderData, customerSlug: string, deliver
     const fileContentPromise = getDataFileContent()
     const campaignFolderPromise = getCampaignFolderId(delivery)
 
-    const fileContent = await fileContentPromise
-    if(!fileContent){
-        throw new Error('No campaign found.')
-    }
-
     order.slug = customerSlug
 
     if(order && order.status === OrderStatus.confirmed && !order.confirmationDateTime) {
         const confirmationTime = new Date()
         order.confirmationDateTime = confirmationTime
-        const salesCycle = JSON.parse(fileContent)
+        const salesCycle = await fileContentPromise
         if(new Date(salesCycle.deadline) < confirmationTime) {
             order.status = OrderStatus.tooLate
         }
@@ -60,11 +55,7 @@ export const getOrderCustomers = async (delivery: Date): Promise<OrderCustomer[]
     const campaignFolder = await getOrCreateFolder(service, delivery.toISOString(), workingFolder.id!)
     const ordersPromise = getOrdersInFolder(service, campaignFolder.id!)
 
-    const dataFileContent = await fileContentPromise
-    if(!dataFileContent) {
-        throw new Error('No campaign found.')
-    }
-    const salesCycle = JSON.parse(dataFileContent) as SalesCycle
+    const salesCycle = await fileContentPromise
 
     const customersBySlug = {} as {[slug: string]: CustomerData}
     salesCycle.customers.forEach(customer => customersBySlug[customer.slug] = customer)

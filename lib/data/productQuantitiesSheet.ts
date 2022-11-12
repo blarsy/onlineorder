@@ -1,5 +1,5 @@
 import { getWeek } from '../dateWeek'
-import { easyDate, easyDateTime } from '../form/formCommon'
+import { easyDate, easyDateTime } from '../common'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
 import config from '../serverConfig'

@@ -1,5 +1,6 @@
 //import './types'
 import Odoo from 'odoo-await'
+import { deliveryPrefsToString, NonLocalProductData, OrderData, ProductData } from '../common'
 import config from '../serverConfig'
 
 export interface OdooProduct {
@@ -21,6 +22,12 @@ export interface OdooProductsByCategory {
 
 interface OdooProducersByCategory {
     [category: string]: OdooProducer[]
+}
+
+interface OdooOrderLine {
+    product_id : number,
+    product_uom_qty: number,
+    price_unit: number
 }
 
 let connection
@@ -120,4 +127,40 @@ export const getProducers = async (): Promise<OdooProducersByCategory> => {
             .map(producer => ({ name: producer.name, id: producer.id }))
     })
     return result
+}
+
+export const createOrder= async(order: OrderData, customerId: number, products: ProductData[], nonLocalProducts: NonLocalProductData[]): Promise<number> => {
+    const odoo = await getOdooConnection()
+
+    const productPrices = {} as {[productId: number]: number}
+    products.forEach(product => productPrices[product.id] = product.price)
+
+    const nonLocalProductOrderData = {} as {[productId: number]: {price: number, packaging: number}}
+    nonLocalProducts.forEach(product => nonLocalProductOrderData[product.id] = {
+        price: product.price,
+        packaging: product.packaging
+    })
+
+    const orderLinesProducts: OdooOrderLine[] = order.quantities.map(quantity => ({ 
+        product_id :quantity.productId,
+        product_uom_qty: quantity.quantity,
+        price_unit: productPrices[quantity.productId]} as OdooOrderLine))
+
+    orderLinesProducts.push(...order.quantitiesNonLocal.map(quantity => ({
+        product_id :quantity.productId,
+        product_uom_qty: quantity.quantity * nonLocalProductOrderData[quantity.productId].packaging,
+        price_unit: nonLocalProductOrderData[quantity.productId].price} as OdooOrderLine
+    )))
+
+    let note = order.note ? `Note client : ${order.note}\n`: ''
+    note += deliveryPrefsToString(order.preferredDeliveryTimes)
+    
+    const orderId = await odoo.create('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
+        note,
+        order_line: {
+            action: 'create',
+            value: orderLinesProducts
+        }})
+
+    return orderId
 }

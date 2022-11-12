@@ -7,7 +7,7 @@ import EditOrderLines from "./editOrderLines"
 import EditPreferences from "./editPreferences"
 import ReviewSendOrder from "./reviewSendOrder"
 import axios from "axios"
-import { orderFromApiCallResult } from "../../lib/form/formCommon"
+import { orderFromApiCallResult } from "../../lib/common"
 
 interface Props {
     customer: CustomerData,

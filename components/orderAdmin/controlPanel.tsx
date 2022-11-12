@@ -33,7 +33,7 @@ const ControlPanel = ({connectionData}: Props) => {
             content = <Campaign connectionData={connectionData} />
             break
         case 2:
-            content = <OrdersFollowup />
+            content = <OrdersFollowup connectionData={connectionData} />
             break
         case 3:
             content = <CustomerLinks />

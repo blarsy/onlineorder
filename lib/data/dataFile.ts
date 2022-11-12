@@ -1,6 +1,6 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
-import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime } from '../common'
+import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime, restoreTypes } from '../common'
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
@@ -12,15 +12,16 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
     await sheet.loadCells()
     
     const customers = [] as CustomerData[]
-    let i = 1, title='dummy', email, mobileNumber, slug, customerName
+    let i = 1, title='dummy', email, mobileNumber, slug, customerName, id
     while(title) {
+        id = sheet.getCell(i, 5).value as number
         title = sheet.getCell(i, 0).value as string
         email = sheet.getCell(i, 1).value as string
         mobileNumber = sheet.getCell(i, 2).value as string
         slug = sheet.getCell(i, 3).value as string
         customerName = sheet.getCell(i, 4).value as string
         if(title) {
-          customers.push({title, email, mobileNumber, slug, customerName})
+          customers.push({id, title, email, mobileNumber, slug, customerName})
         }
         i ++
     }
@@ -93,11 +94,7 @@ export const updateCustomers = async() : Promise<void> => {
   const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
 
   const customersPromise = getCustomerData(docCustomersAndOther)
-  const dataFileContent = await dataFileContentPromise
-  if(!dataFileContent) {
-    throw new Error('Could not load Campaign')
-  }
-  const currentContent = JSON.parse(dataFileContent) as SalesCycle
+  const currentContent = await dataFileContentPromise
   const customers = await customersPromise
   
   await updateDataFile({ ...currentContent, ...{customers}})
@@ -107,11 +104,8 @@ export const updateCustomers = async() : Promise<void> => {
 export const updateProducts = async(sourceSheetId: number) : Promise<void> => {
   const quantitiesPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
   const productsPromise = getProductsForOnlineOrdering()
-  const dataFileContent = await getDataFileContent()
-  if(!dataFileContent) {
-    throw new Error('Could not load Campaign')
-  }
-  const currentContent = JSON.parse(dataFileContent) as SalesCycle
+  const currentContent = await getDataFileContent()
+
   const products = await productsPromise
   const quantities = await quantitiesPromise
   const onlineProductsMap = {} as {[id: number]: ProductData}
@@ -158,15 +152,18 @@ const getDataFileId = async(service: drive_v3.Drive): Promise<string> => {
   return getFileId(service, config.workingFileName, workingFolder.id!)
 }
 
-export const getDataFileContent = async (): Promise<string> => {
+export const getDataFileContent = async (): Promise<SalesCycle> => {
   const service = await connectDrive()
   const dataFileId = await getDataFileId(service)
   
   if(!dataFileId){
-    return ''
+    throw new Error('No campaign found')
   }
 
-  return getFileContent(service, dataFileId!)
+  const salesCycle =JSON.parse(await getFileContent(service, dataFileId!))as SalesCycle
+  restoreTypes(salesCycle)
+
+  return salesCycle
 }
 
 const getNonLocalProductsPackaging = async (doc: GoogleSpreadsheet): Promise<{[productId: number]:number}>  => {

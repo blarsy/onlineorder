@@ -1,8 +1,7 @@
 import { Box, CircularProgress, Stack, Typography } from '@mui/material'
 import axios from 'axios'
 import { useState, useEffect } from 'react'
-import { TaskLogEntry, TaskStatus } from '../../lib/common'
-import { easyDateTime } from '../../lib/form/formCommon'
+import { TaskLogEntry, TaskStatus, easyDateTime } from '../../lib/common'
 import TaskError from './taskError'
 
 const taskStatusToString = (status: TaskStatus) => {
