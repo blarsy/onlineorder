@@ -8,8 +8,8 @@ interface Props {
 }
 const CustomerHeader = ({ customer, salesCycle } : Props) => {
     const weekBounds = getWeekBounds(salesCycle.deliveryDate)
-    return <Stack direction="row" alignSelf="center">
-        <Box sx={{width: '5rem', height:'5rem'}}><img alt="Logo de la Coopérative alimentaire" src='/Logo-header.png' width="100%" height="100%"/></Box>
+    return <Stack direction="row" alignSelf="center" alignItems="center">
+        <Box sx={{width: '5rem', height:'5rem', flexShrink: 0}}><img alt="Logo de la Coopérative alimentaire" src='/Logo-header.png' width="100%" height="100%"/></Box>
         <Box>
             <Typography variant="h4" align="center">{customer.customerName}</Typography>
             <Typography variant="h5" align="center">Commande semaine {`${getWeek(salesCycle.deliveryDate)}-${salesCycle.deliveryDate.getFullYear()}  ${weekBounds[0].toLocaleDateString('fr-BE')} - ${weekBounds[1].toLocaleDateString('fr-BE')}`}</Typography>

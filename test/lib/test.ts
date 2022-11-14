@@ -1,50 +1,71 @@
-import { createProductsSheet, createNewSheet, parseProductSheet, createBlankQuantitiesSheet } from "../../lib/productQuantitiesSheet"
 import creds from '../../google-creds.json'
-import { getLocalProductsByCategories, getProductsForOnlineOrdering } from "../../lib/data/odoo"
-import { createDataFile } from "../../lib/data/dataFile"
 import config, { setConfig } from '../../lib/serverConfig'
+import { connectSpreadsheet, getDocs } from "../../lib/data/google"
+import { docs_v1 } from "googleapis"
+import { getCampaignProductsData } from '../../lib/data/dataFile'
+import { createProductTables } from '../../lib/data/offerFile'
+import { getOdooConnection } from '../../lib/data/odoo'
 jest.setTimeout(20000)
 
-test('Get products from Odoo', async () => {
-    // const availableProducts = await parseProductSheet('1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 'Produits5', creds.client_email, creds.private_key)
-    // const sheetId = await createNewSheet(
-    //     '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-    //     'Produits',
-    //     { gridProperties: { columnCount: 50 } },
-    //     creds.client_email, creds.private_key)
-    // await createProductsSheet('1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-    //     sheetId, new Date('2022-11-03T10:00-02:00'), 
-    //     ['bertrand.larsy@gmail.com', 'ordermodule@coopalimentaire.iam.gserviceaccount.com'],
-    //     undefined,
-    //     creds.client_email, creds.private_key, { "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" })
-    // const res = await getLocalProductsByCategories({ "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" })
-    // console.log(res)
+test('Autofill offer doc', async () => {
     setConfig({ googleServiceAccount: creds.client_email, 
         googlePrivateKey: creds.private_key, 
         connectionInfo: { "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" } ,
         googleSheetIdCustomers: '1GtOR0Hb6lrzUhGguFxEdivKwqm-v3x6LY-tCF0IgblQ',
+        googleDocIdOffer: '1PskODuvkAhSIUnNTLSmhGf74LMJ2UhhdX-XblAwGYN8',
+        //googleDocIdOffer: '1QSPKCyr06J6zNk7dMqSgcdO7WlxuuLbLjO7ClvRpT3I',
         workingFileName: 'testdata.json',
         workingFolderName: 'Coop-dev',
         googleSheetIdProducts: '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE',
         volumesFileName: 'testvolumes.json'
     })
-    await createDataFile(new Date(2022, 10, 14, 6, 0, 0), new Date(2022, 10, 10, 12, 0, 0), 581640229, [])
-    // await createBlankQuantitiesSheet(new Date(2022,10,10,12,0,0), new Date(2022,10,8,11,0,0), 165810646, false)
-    // const availableProducts = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
-    // const sheetId = await createNewSheet(
-    //     '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-    //     'Produits',
-    //     { gridProperties: { columnCount: 50 } })
-    // await createProductsSheet('1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE', 
-    //     sheetId, new Date('2022-11-10T09:00-02:00'), new Date('2022-11-08T09:00-02:00'), 
-    //     ['bertrand.larsy@gmail.com', 'ordermodule@coopalimentaire.iam.gserviceaccount.com'],
-    //     availableProducts)
-    
-    //const res = await getLocalProductsByCategories({ "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" })
-    //console.log(res)
 
-    // const result = await parseProductSheet('1do3iJhMD_k_zg0UnFCEhAaEEwtVMM8aeFYDX4mRG8S4', 'Disponibilités semaine prochaine')
-    // console.log(result)
+    const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
+    const { products, nonLocalProducts } = await getCampaignProductsData(docCustomersAndOther, 803942356)
     
-    //await createDataFile(new Date(2022,10,10,10,0,0), new Date(2022, 10, 8, 9,0,0), 'Disponibilités semaine prochaine')
+    await createProductTables(products, nonLocalProducts)
+
+    // const docs = getDocs()
+    // const theDoc = await docs.documents.get({ documentId: config.googleDocIdOffer })
+    // console.log(JSON.stringify(theDoc.data.body?.content))
+    
+    // const pointOfInsertion = findTextRunStartIndex(theDoc.data.body!.content!, '<offer>')
+
+    // const tableTitle = 'Légumes locaux et bios - ou en conversion, catégorie 1'
+    // await docs.documents.batchUpdate({ documentId: config.googleDocIdOffer,
+    //     requestBody: {
+    //         requests: [
+    //             { insertTable: {
+    //                 columns: 4,
+    //                 location:  { index: pointOfInsertion },
+    //                 rows: 4,
+    //             }},
+    //             write(pointOfInsertion, tableTitle),
+    //         ]
+    //     }
+    // })
+    // const tableIndex = pointOfInsertion + tableTitle.length
+    // await docs.documents.batchUpdate({ documentId: config.googleDocIdOffer,
+    //     requestBody: {
+    //         requests: [
+    //             write(tableIndex + 1, '1'),
+    //             write(tableIndex + 2, '2'),
+    //             write(tableIndex + 3, '3'),
+    //             write(tableIndex + 4, '4'),
+    //             write(tableIndex + 5, '5'),
+    //             write(tableIndex + 6, '6'),
+    //             write(tableIndex + 7, '7'),
+    //             write(tableIndex + 8, '8'),
+    //             write(tableIndex + 9, '9'),
+    //             write(tableIndex + 10, '10'),
+    //             write(tableIndex + 11, '11'),
+    //             write(tableIndex + 12, '12'),
+    //             write(tableIndex + 13, '13'),
+    //             write(tableIndex + 14, '14'),
+    //             write(tableIndex + 15, '15'),
+    //             write(tableIndex + 16, '16'),
+    //         ]
+    //     }
+    // })
+    
 })

@@ -1,5 +1,6 @@
 const googleSheetIdProducts = process.env.GOOGLE_SHEET_ID_PRODUCTS!
 const googleSheetIdCustomers = process.env.GOOGLE_SHEET_ID_CUSTOMERS!
+const googleDocIdOffer = process.env.GOOGLE_DOC_ID_OFFER!
 const workingFileName = process.env.WORKING_FILE_NAME!
 const workingFolderName = process.env.WORKING_FOLDER_NAME!
 const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT!
@@ -11,6 +12,7 @@ const authorizedSigners = process.env.AUTHORIZED_SIGNERS ? JSON.parse(process.en
 interface ServerConfig {
     googleSheetIdProducts: string
     googleSheetIdCustomers: string
+    googleDocIdOffer: string
     workingFileName: string
     workingFolderName: string
     googleServiceAccount: string
@@ -21,7 +23,7 @@ interface ServerConfig {
     [prop: string]: any
 }
 let autoConfig = <ServerConfig> {
-    googleSheetIdProducts, googleSheetIdCustomers, workingFileName, workingFolderName,
+    googleSheetIdProducts, googleSheetIdCustomers, googleDocIdOffer, workingFileName, workingFolderName,
     googleServiceAccount, googlePrivateKey, connectionInfo, volumesFileName, authorizedSigners
 }
 

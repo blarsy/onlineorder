@@ -30,20 +30,25 @@ interface OdooOrderLine {
     price_unit: number
 }
 
-let connection
-const getOdooConnection = async (): Promise<any> => {
-    connection = new Odoo(config.connectionInfo)
-    
-    await connection.connect()
-    return connection
+let connection: any
+let connectionPromise: Promise<any> | undefined
+export const getOdooConnection = async (): Promise<any> => {
+    if(!connectionPromise) {
+        connection = new Odoo(config.connectionInfo)
+        connectionPromise = new Promise((resolve, reject) => {
+            connection.connect().then(() => resolve(connection))
+        })
+    }
+    return connectionPromise as Promise<any>
 }
 
 export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCategory> => {
     const odoo = await getOdooConnection()
+
     const categories = ['Légume', 'Aromatique', 'Fruit']
-    const tagIds = await odoo.search(`product.tag`, { name: categories})
     const outOfCoopCategory = 'Hors Coop'
-    const outOfCoopTagIds = await odoo.search(`product.tag`, { name: outOfCoopCategory})
+    const outOfCoopTagIdsPromise = await odoo.search(`product.tag`, { name: outOfCoopCategory})
+    const tagIds = await odoo.search(`product.tag`, { name: categories})
     const tagsAndIds = await odoo.read('product.tag', tagIds, ['name']) as {id: number, name: string}[]
     const categoryId = {} as {[name: string]: number}
     tagsAndIds.forEach(tagId => categoryId[tagId.name] = tagId.id)
@@ -54,6 +59,7 @@ export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCate
 
     const result = {} as OdooProductsByCategory
 
+    const outOfCoopTagIds = await outOfCoopTagIdsPromise
     categories.forEach(cat => {
         result[cat] = products
             .filter(product => product.product_tag_ids.includes(categoryId[cat]) && !product.product_tag_ids.includes(outOfCoopTagIds[0]))

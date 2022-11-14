@@ -6,6 +6,7 @@ import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
 import { create as createVolumesFile } from './volumesFile'
 import config from '../serverConfig'
+import { createProductTables } from './offerFile'
 
 const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> => {
     const sheet = doc.sheetsByTitle['Clients']
@@ -28,54 +29,62 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
     return customers
 }
 
+export const getCampaignProductsData = async(docCustomersAndOther : GoogleSpreadsheet, sourceSheetId: number): Promise<{ products: ProductData[], nonLocalProducts: NonLocalProductData[]}> => {
+  const quantitiesDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
+  const productsByCategoriesPromise = getProductsForOnlineOrdering()
+
+  const nonLocalProductsPackagingsPromise = getNonLocalProductsPackaging(docCustomersAndOther)
+  const productsByCategories = await productsByCategoriesPromise
+  const nonLocalProductsPackagings = await nonLocalProductsPackagingsPromise
+  const products = [] as ProductData[]
+  const nonLocalProducts = [] as NonLocalProductData[]
+  const quantitiesData = await quantitiesDataPromise
+
+  Object.keys(productsByCategories).forEach(cat => {
+    if(cat.endsWith(' hors coopérative')) {
+      productsByCategories[cat].forEach(product => {
+        if(nonLocalProductsPackagings[product.id]){
+          const targetCategory = cat.substring(0, cat.length - ' hors coopérative'.length)
+
+          nonLocalProducts.push({
+            category: targetCategory,
+            id: product.id,
+            name: product.name,
+            price: product.sellPrice,
+            unit: product.unit,
+            packaging: nonLocalProductsPackagings[product.id]
+          })
+        }
+      })
+    } else {
+      productsByCategories[cat].forEach(product => {
+        const quantity = calculateQuantity(quantitiesData, product.id)
+
+        if(quantity > 0) {
+          products.push({
+            category: cat,
+            id: product.id,
+            name: product.name,
+            price: product.sellPrice,
+            unit: product.unit,
+            quantity
+          })
+        }
+      })
+    }
+  })
+
+  return { products, nonLocalProducts }
+}
+
 export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetId: number, availableDeliveryTimes: AvailableDeliveryTime[]): Promise<drive_v3.Schema$File> => {
-    const quantitiesDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
-    const productsByCategoriesPromise = getProductsForOnlineOrdering()
     const servicePromise = connectDrive()
-    const customerSheetId = config.googleSheetIdCustomers
-    const docCustomersAndOther = await connectSpreadsheet(customerSheetId)
+    const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
 
-    const customersPromise = getCustomerData(docCustomersAndOther)
-    const nonLocalProductsPackagingsPromise = getNonLocalProductsPackaging(docCustomersAndOther)
-    const productsByCategories = await productsByCategoriesPromise
-    const nonLocalProductsPackagings = await nonLocalProductsPackagingsPromise
-    const products = [] as ProductData[]
-    const nonLocalProducts = [] as NonLocalProductData[]
-    const quantitiesData = await quantitiesDataPromise
-
-    Object.keys(productsByCategories).forEach(cat => {
-      if(cat.endsWith(' hors coopérative')) {
-        productsByCategories[cat].forEach(product => {
-          if(nonLocalProductsPackagings[product.id]){
-            const targetCategory = cat.substring(0, cat.length - ' hors coopérative'.length)
-
-            nonLocalProducts.push({
-              category: targetCategory,
-              id: product.id,
-              name: product.name,
-              price: product.sellPrice,
-              unit: product.unit,
-              packaging: nonLocalProductsPackagings[product.id]
-            })
-          }
-        })
-      } else {
-        productsByCategories[cat].forEach(product => {
-          const quantity = calculateQuantity(quantitiesData, product.id)
-
-          if(quantity > 0) {
-            products.push({
-              category: cat,
-              id: product.id,
-              name: product.name,
-              price: product.sellPrice,
-              unit: product.unit,
-              quantity
-            })
-          }
-        })
-      }
-    })
+    const customersPromise = getCustomerData(docCustomersAndOther)    
+    
+    const { products, nonLocalProducts } = await getCampaignProductsData(docCustomersAndOther, sourceSheetId)
+    const createProductTablesPromise= createProductTables(products, nonLocalProducts)
 
     const customers = await customersPromise
 
@@ -86,6 +95,7 @@ export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceS
     const service = await servicePromise
     const result = await createRemoteFile(service, salesCycle, config.workingFileName, config.workingFolderName)
     await createVolumesFilePromise
+    await createProductTablesPromise
     return result
 }
 

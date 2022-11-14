@@ -1,6 +1,6 @@
 import { GoogleAuth } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
-import { google, drive_v3, sheets_v4 } from 'googleapis'
+import { google, drive_v3, sheets_v4, docs_v1 } from 'googleapis'
 import { Readable } from 'stream'
 import { OrderData } from '../common'
 import config from '../serverConfig'
@@ -8,6 +8,11 @@ import config from '../serverConfig'
 export const getSheets = () : sheets_v4.Sheets => {
     const auth = new google.auth.JWT(config.googleServiceAccount, undefined, config.googlePrivateKey, 'https://www.googleapis.com/auth/spreadsheets')
     return google.sheets({version: 'v4', auth})
+}
+
+export const getDocs = () : docs_v1.Docs => {
+    const auth = new google.auth.JWT(config.googleServiceAccount, undefined, config.googlePrivateKey, 'https://www.googleapis.com/auth/documents')
+    return google.docs({version: 'v1', auth})
 }
 
 export const connectSpreadsheet = async (sheetId: string): Promise<GoogleSpreadsheet> =>  {
