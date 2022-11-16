@@ -3,6 +3,7 @@ import { easyDate, easyDateTime } from '../common'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
 import config from '../serverConfig'
+import { sheets_v4 } from 'googleapis'
 
 interface ProductQuantities {
     [productId: number]:{
@@ -14,6 +15,7 @@ interface ProductQuantities {
 
 interface AvailableProductsSnapshot {
     delivery: Date,
+    deadline: Date,
     productQuantities: ProductQuantities,
     productQuantitiesPlannedCrops: ProductQuantities,
     productQuantitiesInStock: {[productId: number]:number | string}
@@ -34,8 +36,12 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
     if(sourceSheetId) {
         initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, copyPlannedCropsOnly)
     }
+
+    const sheets = getSheets()
+    const spreadSheetsheets = (await sheets.spreadsheets.get({ spreadsheetId: config.googleSheetIdProducts })).data.sheets!
     const newSheetId = await createNewSheet(
-        config.googleSheetIdProducts, 
+        config.googleSheetIdProducts,
+        spreadSheetsheets,
         `Disponibilités pour livraison ${easyDate(delivery)}`,
         { gridProperties: { columnCount: 50 } })
     
@@ -47,21 +53,56 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], initialData)
 }
 
-
-export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, additionalSheetProps: object): Promise<number> => {
+export const updateQuantitiesSheet = async(sourceSheetId: number): Promise<void> => {
+    const currentData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId, false)
+    
     const sheets = getSheets()
-    let num = 1
-    let currentTitle = sheetTitle
+    const spreadSheetsheets = (await sheets.spreadsheets.get({ spreadsheetId: config.googleSheetIdProducts })).data.sheets!
+    const sourceSheetName = spreadSheetsheets.find(sheet => sheet.properties!.sheetId! == sourceSheetId)!.properties!.title!
+    const newSheetId = await createNewSheet(config.googleSheetIdProducts, spreadSheetsheets, 'Feuille mise à jour', { gridProperties: { columnCount: 50 } })
 
+    await createProductsSheet(config.googleSheetIdProducts, newSheetId, currentData.delivery, currentData.deadline,
+        ['bertrand.larsy@gmail.com', config.googleServiceAccount], currentData)
+
+    return sheets.spreadsheets.batchUpdate({
+        spreadsheetId: config.googleSheetIdProducts,
+        requestBody: {
+            requests: [{
+                deleteSheet: {
+                    sheetId: sourceSheetId,
+                }
+            },{ 
+                updateSheetProperties: {
+                    fields: 'title',
+                    properties: {
+                        sheetId: newSheetId,
+                        title: sourceSheetName
+                    }
+                }
+            }]
+        }
+    }).then(() => {})
+
+}
+
+const getValidName = (title: string, spreadSheetsheets: sheets_v4.Schema$Sheet[]): string => {
     let targetSheet = null
+    let currentTitle = title
+    let num = 1
     do {
-        targetSheet = (await sheets.spreadsheets.get({ 
-            spreadsheetId })).data.sheets?.find(sheet => sheet.properties?.title === currentTitle)
+        targetSheet = spreadSheetsheets.find(sheet => sheet.properties?.title === title)
         
         if(targetSheet){
-            currentTitle = `${sheetTitle}(${num ++})`
+            currentTitle = `${title}(${num ++})`
         }
     } while(targetSheet)
+    return currentTitle
+}
+
+export const createNewSheet = async(spreadsheetId: string, spreadSheetsheets: sheets_v4.Schema$Sheet[], sheetTitle: string, additionalSheetProps: object): Promise<number> => {
+    const sheets = getSheets()
+    const newSheetTitle = getValidName(sheetTitle, spreadSheetsheets)
+
     const res = await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
@@ -69,7 +110,7 @@ export const createNewSheet = async(spreadsheetId: string, sheetTitle: string, a
                 addSheet: {
                     properties: {
                         ... additionalSheetProps,
-                        title: currentTitle,
+                        title: newSheetTitle,
                     }
                 }
             }]
@@ -136,9 +177,9 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     })
  
     const sheets = getSheets()
+    const productSheets = (await await sheets.spreadsheets.get({ spreadsheetId })).data.sheets!
 
-    const targetSheet = (await sheets.spreadsheets.get({ 
-        spreadsheetId })).data.sheets?.find(sheet => sheet.properties?.sheetId === sheetId)
+   const targetSheet = productSheets.find(sheet => sheet.properties?.sheetId == sheetId)
     
     await sheets.spreadsheets.values.batchUpdate({ 
         spreadsheetId, 
@@ -156,6 +197,9 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                 }, {
                     range: `${targetSheet?.properties?.title}!B1:E1`,
                     values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, `Clôture: ${easyDateTime(deadline)}` ]]
+                }, {
+                    range: `${targetSheet?.properties?.title}!B1:F1`,
+                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, 'Clôture:', toSheetDate(deadline) ]]
                 }
             ]
         }
@@ -181,6 +225,26 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                         }
                     },
                     fields: 'userEnteredFormat.numberFormat(type, pattern)'
+                }
+            },{
+                // define a date format for the cell that will receive the deadline
+                repeatCell: {
+                    range: {
+                        sheetId,
+                        startRowIndex: 0, endRowIndex: 1,
+                        startColumnIndex: 5, endColumnIndex: 6
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'DATE',
+                                pattern: 'ddd dd/MM/yyy hh:mm'
+                            },
+                            wrapStrategy: 'WRAP'
+                        }
+                        
+                    },
+                    fields: 'userEnteredFormat.(numberFormat(type, pattern), wrapStrategy)'
                 }
             },{
                 addBanding: {
@@ -623,11 +687,19 @@ export const parseProductSheet = async (spreadsheetId: string, sheetId: number, 
                     startRowIndex: 0, 
                     endRowIndex: 1
                 }
+            }, {
+                // Cell containing deadline
+                gridRange: {
+                    sheetId, startColumnIndex: 5,
+                    endColumnIndex: 6,
+                    startRowIndex: 0, 
+                    endRowIndex: 1
+                }
             }], 
             includeGridData: true,
         }
     })
-    const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, deliveryDate] = res.data.sheets![0].data!
+    const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, deliveryDate, deadlineDate] = res.data.sheets![0].data!
     const productQuantities = {} as ProductQuantities
 
     if(!plannedCropsOnly) {
@@ -666,7 +738,8 @@ export const parseProductSheet = async (spreadsheetId: string, sheetId: number, 
     })
 
     const result = { productQuantities, productQuantitiesPlannedCrops, productQuantitiesInStock,
-        delivery: fromSheetDate(deliveryDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
+        delivery: fromSheetDate(deliveryDate.rowData![0].values![0].userEnteredValue!.numberValue!),
+        deadline: fromSheetDate(deadlineDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
     return result
 }
 
@@ -707,10 +780,10 @@ const makeProductQuantitiesLine = (initialProductQuantities: (number | string | 
             }
             initialProductQuantities.push(value)
         })  
-        let inStock = null
-        if(initialQuantities.productQuantitiesInStock[productId]){
-            inStock = initialQuantities.productQuantitiesInStock[productId]
-        }
-        initialProductQuantities.push(inStock)
-    }   
+    } 
+    let inStock = null
+    if(initialQuantities.productQuantitiesInStock[productId]){
+        inStock = initialQuantities.productQuantitiesInStock[productId]
+    }
+    initialProductQuantities.push(inStock)
 }

@@ -1,6 +1,6 @@
 import { utils } from "ethers"
 import { NextApiRequest, NextApiResponse } from "next"
-import { createBlankQuantitiesSheet } from "../../lib/data/productQuantitiesSheet"
+import { createBlankQuantitiesSheet, updateQuantitiesSheet } from "../../lib/data/productQuantitiesSheet"
 import { TaskNames } from "../../lib/form/formCommon"
 import { handleException } from "../../lib/request"
 import config from '../../lib/serverConfig'
@@ -35,6 +35,27 @@ export default async function handler(
                                 await createBlankQuantitiesSheet(args[0] as Date, args[1] as Date, args[2] as number)
                             }, 
                             TaskNames.CreateQuantitiesSheet))
+                        res.status(200).json({ error: '' })
+                    }
+                }
+            } catch(e) {
+                handleException(e, res)
+            }
+        } else if(req.method === 'PATCH') {
+            try {
+                const signerAddress = utils.verifyMessage(req.body.message, req.body.signature)
+                if(!config.authorizedSigners.find(authorizedSigner => authorizedSigner === signerAddress)){
+                    res.status(500).json({ error: 'Unauthorized' })
+                } else {
+                    if(!req.body.sheetId || isNaN(Number(req.body.sheetId))) {
+                        res.status(500).json({ error: 'Invalid or missing sheetId' })
+                    } else {
+                        queue.enqueue(
+                            new Task([req.body.sheetId], 
+                            async (args: any[]) => {
+                                await updateQuantitiesSheet(args[0] as number)
+                            }, 
+                            TaskNames.UpdateQuantitiesSheet))
                         res.status(200).json({ error: '' })
                     }
                 }

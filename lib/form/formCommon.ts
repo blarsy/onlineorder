@@ -50,6 +50,7 @@ export const getOrderTotal = (order: OrderData, enrichedSalesCycle: EnrichedSale
 export const TaskNames = {
   CreateCampaign: 'Creation d\'une nouvelle campagne',
   CreateQuantitiesSheet: 'Création d\'un tableau de quantités',
+  UpdateQuantitiesSheet: 'Mise à jour du tableau de quantité',
   UpdateCustomers: 'Mise à jour clients',
   UpdateProducts: 'Mise à jour produits'
 }

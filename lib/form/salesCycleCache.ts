@@ -71,7 +71,7 @@ export interface EnrichedSalesCycle {
 const enrichSalesCycle = (salesCycle: SalesCycle): EnrichedSalesCycle => {
     const productsById = {} as ProductsById
     const productsByCategory = {} as ProductsByCategory
-    salesCycle.products.forEach(product => {
+    salesCycle.products.sort((a, b) => a.name.localeCompare(b.name, 'fr-BE')).forEach(product => {
         if(productsByCategory[product.category]){
             productsByCategory[product.category].push(product.id)
         } else {
@@ -83,7 +83,7 @@ const enrichSalesCycle = (salesCycle: SalesCycle): EnrichedSalesCycle => {
     const nonLocalProductsById = {} as NonLocalProductsById
     const nonLocalProductsByCategory = {} as NonLocalProductsByCategory
 
-    salesCycle.nonLocalProducts.forEach(product => {
+    salesCycle.nonLocalProducts.sort((a, b) => a.name.localeCompare(b.name, 'fr-BE')).forEach(product => {
         if(nonLocalProductsByCategory[product.category]) {
             nonLocalProductsByCategory[product.category].push(product)
         } else {

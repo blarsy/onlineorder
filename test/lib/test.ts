@@ -5,6 +5,7 @@ import { docs_v1 } from "googleapis"
 import { getCampaignProductsData } from '../../lib/data/dataFile'
 import { createProductTables } from '../../lib/data/offerFile'
 import { getOdooConnection } from '../../lib/data/odoo'
+import { updateQuantitiesSheet } from '../../lib/data/productQuantitiesSheet'
 jest.setTimeout(20000)
 
 test('Autofill offer doc', async () => {
@@ -20,10 +21,7 @@ test('Autofill offer doc', async () => {
         volumesFileName: 'testvolumes.json'
     })
 
-    const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
-    const { products, nonLocalProducts } = await getCampaignProductsData(docCustomersAndOther, 803942356)
-    
-    await createProductTables(products, nonLocalProducts)
+    await updateQuantitiesSheet(1012624281)
 
     // const docs = getDocs()
     // const theDoc = await docs.documents.get({ documentId: config.googleDocIdOffer })
