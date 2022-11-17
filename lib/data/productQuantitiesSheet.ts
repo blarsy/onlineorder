@@ -779,7 +779,11 @@ const makeProductQuantitiesLine = (initialProductQuantities: (number | string | 
                 value = productQuantitiesPlannedCrops[producer.id]
             }
             initialProductQuantities.push(value)
-        })  
+        })
+    } else {
+        producersWithPlannedCrops.forEach(producer => {
+            initialProductQuantities.push(null)
+        })
     } 
     let inStock = null
     if(initialQuantities.productQuantitiesInStock[productId]){
