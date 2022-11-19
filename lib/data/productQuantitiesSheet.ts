@@ -30,6 +30,11 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
+const getAllSheetsOfSpreadsheet = async (spreadsheetId: string): Promise<sheets_v4.Schema$Sheet[]> => {
+    const sheets = getSheets()
+    return (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets!
+}
+
 export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number, copyPlannedCropsOnly = true) => {
     let initialData = undefined as AvailableProductsSnapshot | undefined
     let initialDataPromise = undefined
@@ -37,8 +42,8 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
         initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, copyPlannedCropsOnly)
     }
 
-    const sheets = getSheets()
-    const spreadSheetsheets = (await sheets.spreadsheets.get({ spreadsheetId: config.googleSheetIdProducts })).data.sheets!
+    const spreadSheetsheets = await getAllSheetsOfSpreadsheet(config.googleSheetIdProducts)
+
     const newSheetId = await createNewSheet(
         config.googleSheetIdProducts,
         spreadSheetsheets,
@@ -54,12 +59,14 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
 }
 
 export const updateQuantitiesSheet = async(sourceSheetId: number): Promise<void> => {
-    const currentData = await parseProductSheet(config.googleSheetIdProducts, sourceSheetId, false)
+    const currentDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, false)
     
     const sheets = getSheets()
-    const spreadSheetsheets = (await sheets.spreadsheets.get({ spreadsheetId: config.googleSheetIdProducts })).data.sheets!
+    const spreadSheetsheets = await getAllSheetsOfSpreadsheet(config.googleSheetIdProducts)
     const sourceSheetName = spreadSheetsheets.find(sheet => sheet.properties!.sheetId! == sourceSheetId)!.properties!.title!
     const newSheetId = await createNewSheet(config.googleSheetIdProducts, spreadSheetsheets, 'Feuille mise à jour', { gridProperties: { columnCount: 50 } })
+
+    const currentData = await currentDataPromise
 
     await createProductsSheet(config.googleSheetIdProducts, newSheetId, currentData.delivery, currentData.deadline,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], currentData)
@@ -144,6 +151,7 @@ const fromSheetDate = (num : number): Date => {
 }
 
 export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, deadline: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
+    const productSheetsPromise = getAllSheetsOfSpreadsheet(spreadsheetId)
     const productSheetInput = await getProductSheetInput()
     const products = productSheetInput.products
     const numberOfProducts = productSheetInput.numberOfProducts
@@ -177,7 +185,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
     })
  
     const sheets = getSheets()
-    const productSheets = (await await sheets.spreadsheets.get({ spreadsheetId })).data.sheets!
+    const productSheets = await productSheetsPromise
 
    const targetSheet = productSheets.find(sheet => sheet.properties?.sheetId == sheetId)
     
@@ -632,9 +640,37 @@ export const calculateQuantity = (quantities: AvailableProductsSnapshot, product
         inStockQuantity
 }
 
+export const getProducersOfWhomToRepeatQuantities = async (spreadsheetId: string, numberOfProducers: number): Promise<{[producerId: number]: boolean}> => {
+    const producersSettingsSheetId = (await getAllSheetsOfSpreadsheet(spreadsheetId)).find(sheet => sheet.properties!.title! === 'Paramètres producteurs')!.properties!.sheetId!
+    const sheets = getSheets()
+    const res = await sheets.spreadsheets.getByDataFilter({
+        spreadsheetId, requestBody: {
+            dataFilters: [{
+                gridRange: {
+                    sheetId: producersSettingsSheetId,
+                    startColumnIndex: 0, endColumnIndex: 1,
+                    startRowIndex: 2, endRowIndex: 2 + numberOfProducers
+                }
+            }, {
+                gridRange: {
+                    sheetId: producersSettingsSheetId,
+                    startColumnIndex: 2, endColumnIndex: 3,
+                    startRowIndex: 2, endRowIndex: 2 + numberOfProducers
+                }
+            }], 
+            includeGridData: true
+        }
+    })
+    const [producersIds, repeatQuantitiesSettings] = res.data.sheets![0].data!
+    const result = {} as {[producerId: number]: boolean}
+    producersIds.rowData!.forEach((producerRow, idx) => result[producerRow.values![0].userEnteredValue!.numberValue!] = repeatQuantitiesSettings.rowData![idx].values![0].userEnteredValue?.boolValue!)
+    return result
+}
+
 export const parseProductSheet = async (spreadsheetId: string, sheetId: number, plannedCropsOnly?: boolean): Promise<AvailableProductsSnapshot> => {
-    const sheets = await getSheets()
+    const sheets = getSheets()
     const productSheetInput = await getProductSheetInput()
+    const producersOfWhomToRepeatQuantitiesPromise = getProducersOfWhomToRepeatQuantities(spreadsheetId, productSheetInput.producers.length)
     const res = await sheets.spreadsheets.getByDataFilter({ 
         spreadsheetId, requestBody: {
             dataFilters: [{
@@ -701,22 +737,23 @@ export const parseProductSheet = async (spreadsheetId: string, sheetId: number, 
     })
     const [rawQuantities, rawQuantitiesPlannedCrops, productIds, producerIds, producersWithPlannedCropsIds, deliveryDate, deadlineDate] = res.data.sheets![0].data!
     const productQuantities = {} as ProductQuantities
+    const producersOfWhomToRepeatQuantities = await producersOfWhomToRepeatQuantitiesPromise
 
-    if(!plannedCropsOnly) {
-        rawQuantities.rowData?.forEach((row, idx) => {
-            const productId = productIds.rowData![idx].values![0].userEnteredValue!.numberValue!
-            row.values!.forEach((quantityCell, qtyIdx) => {
-                const producerId = producerIds.rowData![0].values![qtyIdx].userEnteredValue!.numberValue!
-    
+    rawQuantities.rowData?.forEach((row, idx) => {
+        const productId = productIds.rowData![idx].values![0].userEnteredValue!.numberValue!
+        row.values!.forEach((quantityCell, qtyIdx) => {
+            const producerId = producerIds.rowData![0].values![qtyIdx].userEnteredValue!.numberValue!
+
+            if(!plannedCropsOnly || producersOfWhomToRepeatQuantities[producerId]) {
                 if(quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) {
                     if(!productQuantities[productId]){
                         productQuantities[productId] = { producerQuantities: {} as {[producerId: number]: number} }
                     }
                     productQuantities[productId].producerQuantities[producerId] = (quantityCell.userEnteredValue?.numberValue || quantityCell.userEnteredValue?.stringValue) as number | string
                 }
-            })
+            }
         })
-    }
+    })
 
     const productQuantitiesPlannedCrops = {} as ProductQuantities
     const productQuantitiesInStock = {} as {[productId: number]:(number | string)}

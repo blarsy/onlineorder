@@ -3,11 +3,15 @@ import { getDocs } from "./google"
 import config from '../serverConfig'
 import { NonLocalProductData, ProductData } from "../common"
 
-export const createProductTables = async (products: ProductData[], nonLocalProducts: NonLocalProductData[] ): Promise<void> => {
+export const getInsertionPoint = async (): Promise<number> => {
     const docs = getDocs()
     const theDoc = await docs.documents.get({ documentId: config.googleDocIdOffer })
     const index = findTextRunStartIndex(theDoc.data.body!.content!, '<offer>')
+    return index
+}
 
+export const createProductTables = async (products: ProductData[], nonLocalProducts: NonLocalProductData[], insertionPoint: number ): Promise<void> => {
+    const docs = getDocs()
     const requests = [] as docs_v1.Schema$Request[]
 
     const subtitles = {
@@ -23,7 +27,7 @@ export const createProductTables = async (products: ProductData[], nonLocalProdu
         nonLocalCells.push({ text: product.price.toLocaleString('fr-BE', {style:'currency', currency:'EUR'})})
         nonLocalCells.push({ text: product.packaging.toLocaleString('fr-BE')})
     })
-    requests.push(...nonLocalPriceTable(index, nonLocalCells, 'Hors coopérative', 'Certifié Bio, fournisseur non local'))
+    requests.push(...nonLocalPriceTable(insertionPoint, nonLocalCells, 'Hors coopérative', 'Certifié Bio, fournisseur non local'))
 
     const productsByCategory = {} as {[category: string]: ProductData[]}
     products.forEach(product => {
@@ -41,7 +45,7 @@ export const createProductTables = async (products: ProductData[], nonLocalProdu
             cells.push({ text: product.quantity.toLocaleString('fr-BE') })
             cells.push({ text: product.price.toLocaleString('fr-BE', {style:'currency', currency:'EUR'}) })
         })
-        requests.push(...priceTable(index, cells, cat, subtitles[cat] ))
+        requests.push(...priceTable(insertionPoint, cells, cat, subtitles[cat] ))
     })
 
     await docs.documents.batchUpdate({

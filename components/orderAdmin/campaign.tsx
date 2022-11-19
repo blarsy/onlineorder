@@ -60,6 +60,7 @@ const Campaign = ({ connectionData } : Props) => {
     }, [])
 
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
+        <Typography variant="body1">Les quantités dans la feuillle de quantités sont clôturées ? C&apos;est le moment de créer une nouvelle campagne.</Typography>
         <Button variant="contained" onClick={() => setCreateCampaignOpen(true)}>Nouvelle campagne</Button>
         <Dialog maxWidth="lg" fullWidth={true} open={createCampaignOpen} onClose={() => setCreateCampaignOpen(false)} >
             <DialogTitle>Nouvelle campagne</DialogTitle>
@@ -79,6 +80,7 @@ const Campaign = ({ connectionData } : Props) => {
         <Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
             <Paper elevation={4} sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center', padding: '1rem', gap: '0.5rem' }}>
                 <Typography variant="h6">Campagne en cours. Livraisons: {easyDateTime(new Date(currentCampaignInfo.salesCycle?.deliveryDate!))}</Typography>
+                <Typography variant="body1">Des clients ajoutés ? ou leurs infos ont été mises à jours ? C&apos;est ici:</Typography>
                 <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
                     setUpdatingCustomers({ working: true, error: '' })
                     try{
@@ -106,6 +108,7 @@ const Campaign = ({ connectionData } : Props) => {
                 }}>
                 {({ isSubmitting, getFieldProps, values }) => (
                     <Stack sx={{ border: '1px solid #444', padding: '0.5rem'}} component={Form} gap="0.5rem">
+                        <Typography variant="body1">Des produits ajoutés dans la feuille de quantité ? ou leurs infos ont été mises à jours ? C&apos;est ici:</Typography>
                         <SheetsSelect fieldProps={getFieldProps('sheetId')} />
                         <LoadingButton type="submit" loading={isSubmitting} loadingPosition="start" 
                             variant="contained" startIcon={<Storefront />} >Mettre à jour les produits</LoadingButton>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, Link } from "@mui/material"
+import { Alert, Box, Button, Link, Typography } from "@mui/material"
 import { CustomerData } from "../../lib/common"
 import { getData } from '../../lib/form/salesCycleCache'
 import Loader from '../form/loader'
@@ -21,7 +21,11 @@ const CustomerLinks = () => {
     }, [])
     return <Loader loading={customersState.loading} error={customersState.error}>
         <Box display="flex" flexDirection="column">
-            { customersState.customers.map(customer => <Link key={customer.slug} href={`${window.location.origin}/${customer.slug}`}>{customer.customerName}</Link> )}
+            <Typography variant="body1">Liens individuels à envoyer à chaque client (ou à utiliser pour encoder une commande par téléphone)</Typography>
+            { customersState.customers.map(customer => <Box key={customer.slug} display="flex">
+                <Link flex="1 0 60%" href={`${window.location.origin}/${customer.slug}`}>{customer.customerName}</Link>
+                <Typography flex="1 0 60%">{customer.email}</Typography>
+            </Box>)}
         </Box>
     </Loader>
 }

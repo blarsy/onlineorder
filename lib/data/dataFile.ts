@@ -6,7 +6,7 @@ import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
 import { create as createVolumesFile } from './volumesFile'
 import config from '../serverConfig'
-import { createProductTables } from './offerFile'
+import { createProductTables, getInsertionPoint } from './offerFile'
 
 const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> => {
     const sheet = doc.sheetsByTitle['Clients']
@@ -30,7 +30,7 @@ const getCustomerData = async(doc: GoogleSpreadsheet):Promise<CustomerData[]> =>
 }
 
 export const getCampaignProductsData = async(docCustomersAndOther : GoogleSpreadsheet, sourceSheetId: number): Promise<{ products: ProductData[], nonLocalProducts: NonLocalProductData[]}> => {
-  const quantitiesDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId)
+  const quantitiesDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, )
   const productsByCategoriesPromise = getProductsForOnlineOrdering()
 
   const nonLocalProductsPackagingsPromise = getNonLocalProductsPackaging(docCustomersAndOther)
@@ -79,12 +79,14 @@ export const getCampaignProductsData = async(docCustomersAndOther : GoogleSpread
 
 export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetId: number, availableDeliveryTimes: AvailableDeliveryTime[]): Promise<drive_v3.Schema$File> => {
     const servicePromise = connectDrive()
+    const insertionPointPromise = getInsertionPoint()
     const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
 
     const customersPromise = getCustomerData(docCustomersAndOther)    
     
     const { products, nonLocalProducts } = await getCampaignProductsData(docCustomersAndOther, sourceSheetId)
-    const createProductTablesPromise= createProductTables(products, nonLocalProducts)
+    const insertionPoint = await insertionPointPromise
+    const createProductTablesPromise= createProductTables(products, nonLocalProducts, insertionPoint)
 
     const customers = await customersPromise
 
