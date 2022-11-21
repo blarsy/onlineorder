@@ -57,6 +57,38 @@ export const create = async (salesCycle: SalesCycle):Promise<void> => {
     await createRemoteFile(service, initialStock, config.volumesFileName, config.workingFolderName)
 }
 
+export const updateQuantities = async (updatedQuantities: {[productId: number]: number}): Promise<void> => {
+    const servicePromise = connectDrive()
+    const fileId = await getVolumesFileId()
+
+    const service = await servicePromise
+    await acquireLock()
+    try {
+        let content = JSON.parse(await getFileContent(service, fileId)) as OrderedVolumes
+        Object.keys(updatedQuantities).forEach(productId => {
+            //look for new products
+            if(!content[Number(productId)]) {
+                content[Number(productId)] = {
+                    orders: [],
+                    originalQuantity: updatedQuantities[Number(productId)]
+                }
+            } else {
+                const quantitiesOrdered = content[Number(productId)].orders.reduce<number>((acc, orderQuantity) => acc += orderQuantity.quantityOrdered, 0)
+                if(quantitiesOrdered > updatedQuantities[Number(productId)]) {
+                    //prevent quantities to fall below what has already been ordered
+                    content[Number(productId)].originalQuantity = quantitiesOrdered
+                } else {
+                    content[Number(productId)].originalQuantity = updatedQuantities[Number(productId)]
+                }
+            }
+        })
+
+        return updateFile(service, fileId, content)
+    } finally {
+        releaseLock()
+    }
+}
+
 export const registerOrderQuantities = async (order: OrderData, customerSlug: string): Promise<void> => {
     const service = await connectDrive()
     const fileId = await getVolumesFileId()

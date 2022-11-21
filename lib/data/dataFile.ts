@@ -4,7 +4,7 @@ import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDe
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
-import { create as createVolumesFile } from './volumesFile'
+import { create as createVolumesFile, updateQuantities } from './volumesFile'
 import config from '../serverConfig'
 import { createProductTables, getInsertionPoint } from './offerFile'
 
@@ -123,6 +123,8 @@ export const updateProducts = async(sourceSheetId: number) : Promise<void> => {
   const onlineProductsMap = {} as {[id: number]: ProductData}
   currentContent.products.forEach(product => onlineProductsMap[product.id] = product)
 
+  const updatedQuantities = {} as { [productId: number]: number }
+
   Object.keys(products).forEach(cat => {
     products[cat].forEach(odooProduct => {
       const productToUpdate = onlineProductsMap[odooProduct.id]
@@ -138,18 +140,25 @@ export const updateProducts = async(sourceSheetId: number) : Promise<void> => {
             category: cat,
             quantity
           })
+          updatedQuantities[odooProduct.id] = quantity
         }
       } else {
         // Update date from Odoo and quantities sheet
+        const quantity = calculateQuantity(quantities, odooProduct.id)
         productToUpdate.name = odooProduct.name
         productToUpdate.price = odooProduct.sellPrice
         productToUpdate.unit = odooProduct.unit
-        productToUpdate.quantity = calculateQuantity(quantities, odooProduct.id)
-      } 
+        productToUpdate.quantity = quantity
+        updatedQuantities[odooProduct.id] = quantity
+      }
     })
   })
 
+  const updateVolumesPromise = updateQuantities(updatedQuantities)
+
   await updateDataFile(currentContent)
+  await updateVolumesPromise
+
 }
 
 const updateDataFile = async(newContent: SalesCycle): Promise<void> => {
