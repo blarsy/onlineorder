@@ -32,7 +32,7 @@ const NonLocalProductsOrderTable = ({ products, touched, errors, getFieldProps, 
                     <TableCell component="th" scope="row">{product.name}</TableCell>
                     <TableCell align="right">{product.unit}</TableCell>
                     <TableCell align="right">{product.price.toFixed(2)}€</TableCell>
-                    <TableCell align="right">{product.packaging} {product.unit}</TableCell>
+                    <TableCell align="right">par {product.packaging} {product.unit}</TableCell>
                     <TableCell align="right">
                         <TextField size="small"
                             id={formattedId} error={touched[formattedId] && !!errors[formattedId]}

@@ -25,7 +25,7 @@ export const createProductTables = async (products: ProductData[], nonLocalProdu
         nonLocalCells.push({ text: product.name})
         nonLocalCells.push({ text: product.unit})
         nonLocalCells.push({ text: product.price.toLocaleString('fr-BE', {style:'currency', currency:'EUR'})})
-        nonLocalCells.push({ text: product.packaging.toLocaleString('fr-BE')})
+        nonLocalCells.push({ text: `par ${product.packaging.toLocaleString('fr-BE')} ${product.unit}`})
     })
     requests.push(...nonLocalPriceTable(insertionPoint, nonLocalCells, 'Hors coopérative', 'Certifié Bio, fournisseur non local'))
 
