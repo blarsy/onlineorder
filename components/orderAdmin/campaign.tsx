@@ -77,7 +77,8 @@ const Campaign = ({ connectionData } : Props) => {
                 <Button onClick={() => setCreateCampaignOpen(false)}>Annuler</Button>
             </DialogActions>
         </Dialog>
-        <Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
+        { currentCampaignInfo.error.includes('No campaign found') ? <Alert severity="info">Aucune campagne active pour le moment</Alert>
+        :(        <Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
             <Paper elevation={4} sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center', padding: '1rem', gap: '0.5rem' }}>
                 <Typography variant="h6">Campagne en cours. Livraisons: {easyDateTime(new Date(currentCampaignInfo.salesCycle?.deliveryDate!))}</Typography>
                 <Typography variant="body1">Des clients ajoutés ? ou leurs infos ont été mises à jours ? C&apos;est ici:</Typography>
@@ -116,7 +117,9 @@ const Campaign = ({ connectionData } : Props) => {
                     </Stack>)}
                 </Formik>
             </Paper>
-        </Loader>
+        </Loader>)
+        }
+
     </Box>
 }
 
