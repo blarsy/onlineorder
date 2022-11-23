@@ -7,6 +7,9 @@ export const getInsertionPoint = async (): Promise<number> => {
     const docs = getDocs()
     const theDoc = await docs.documents.get({ documentId: config.googleDocIdOffer })
     const index = findTextRunStartIndex(theDoc.data.body!.content!, '<offer>')
+    if(index === -1){
+        throw new Error(`Le marqueur d'insertion '<offer>' n'a pas été trouvé dans le document d'offre avec id ${config.googleDocIdOffer}`)
+    }
     return index
 }
 
@@ -446,7 +449,7 @@ const findTextRunStartIndex = (contentToSearch: docs_v1.Schema$StructuralElement
         }
     })
     if(!result) {
-        throw new Error('text not found')
+        return -1
     } else {
         return result
     }
