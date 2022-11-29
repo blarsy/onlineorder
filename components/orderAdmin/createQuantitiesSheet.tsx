@@ -14,6 +14,7 @@ import { findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
 import '../../lib/form/formCommon'
 import SheetsSelect from './sheetsSelect'
+import { extractUiError } from '../../lib/form/formCommon'
 
 interface Props {
     connectionData: ConnectionData
@@ -69,8 +70,8 @@ const CreateQuantitiesSheets = ({ connectionData } : Props) => {
                     await axios.put('/api/quantitiessheet', { message, signature, 
                         delivery: values.delivery, deadline: values.deadline, sheetId: values.sheetId })
                     setCreateQuantitiesSheet({ working: false, error: '' })
-                } catch (e) {
-                    setCreateQuantitiesSheet({ working: false, error: (e as Error).toString()})
+                } catch (e: any) {
+                    setCreateQuantitiesSheet({ working: false, error: extractUiError(e)})
                 }
             }}
         >

@@ -5,7 +5,7 @@ import ExpandIcon from '@mui/icons-material/ExpandMore'
 import CollapseIcon from '@mui/icons-material/ExpandLess'
 import { ConnectionData, OrderCustomer, OrderStatus, orderFromApiCallResult } from '../../lib/common'
 import Loader from "../form/loader"
-import { getOrderTotal } from '../../lib/form/formCommon'
+import { extractUiError, getOrderTotal } from '../../lib/form/formCommon'
 import { EnrichedSalesCycle, getData } from '../../lib/form/salesCycleCache'
 import OrderDetails from './orderDetails'
 import OrderActions from './orderActions'
@@ -36,7 +36,7 @@ const OrdersFollowup = ({ connectionData }: Props) => {
                 const res = await axios.get(`/api/order?delivery=${enrichedSalesCycle.salesCycle.deliveryDate.toISOString()}`)
                 setOrdersState({ loading: false, error: '', data: res.data, enrichedSalesCycle })
             } catch(e: any) {
-                setOrdersState({ loading: false, error: e.toString(), data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle})
+                setOrdersState({ loading: false, error: extractUiError(e), data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle})
             }
         }
         load()

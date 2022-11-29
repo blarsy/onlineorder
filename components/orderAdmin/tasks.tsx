@@ -20,9 +20,11 @@ const Tasks = () => {
 
     useEffect(() => {
         const timerId = window.setInterval(async () => {
-            const res = await axios.get('/api/tasks')
-            if(res.status === 200 && !res.data.error){
+            try {
+                const res = await axios.get('/api/tasks')
                 setTasks(res.data.tasks)
+            } catch(e) { 
+                // swallow
             }
         }, 2000)
 

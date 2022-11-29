@@ -54,8 +54,8 @@ export const create = async (salesCycle: SalesCycle):Promise<void> => {
     })
 
     const service = await servicePromise
-    await createRemoteFile(service, initialStock, config.volumesFileName, config.workingFolderName)
-    volumesFileId = ''
+    const newFile = await createRemoteFile(service, initialStock, config.volumesFileName, config.workingFolderName)
+    volumesFileId = newFile.id!
 }
 
 export const updateQuantities = async (updatedQuantities: {[productId: number]: number}): Promise<void> => {

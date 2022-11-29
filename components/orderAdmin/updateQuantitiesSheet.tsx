@@ -9,6 +9,7 @@ import axios from 'axios'
 import { ConnectionData } from "../../lib/common"
 import Submit from '../form/submit'
 import SheetsSelect from './sheetsSelect'
+import { extractUiError } from '../../lib/form/formCommon'
 
 interface Props {
     connectionData: ConnectionData
@@ -39,8 +40,8 @@ const UpdateQuantitiesSheets = ({ connectionData } : Props) => {
                     const signature = await connectionData.signer?.signMessage(message)
                     await axios.patch('/api/quantitiessheet', { message, signature, sheetId: values.sheetId })
                     setUpdateQuantitiesSheet({ working: false, error: '' })
-                } catch (e) {
-                    setUpdateQuantitiesSheet({ working: false, error: (e as Error).toString()})
+                } catch (e: any) {
+                    setUpdateQuantitiesSheet({ working: false, error: extractUiError(e)})
                 }
             }}
         >

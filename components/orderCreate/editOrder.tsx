@@ -8,6 +8,7 @@ import EditPreferences from "./editPreferences"
 import ReviewSendOrder from "./reviewSendOrder"
 import axios from "axios"
 import { orderFromApiCallResult } from "../../lib/common"
+import { extractUiError } from "../../lib/form/formCommon"
 
 interface Props {
     customer: CustomerData,
@@ -26,18 +27,18 @@ const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer, refreshQuantit
     }
 
     const saveOrder = async ( customer: CustomerData, delivery: Date) : Promise<string> => {
-        const res = await axios.put('/api/order', {
-            slug: customer.slug,
-            delivery,
-            order: customer.order
-        })
-        if(res.status != 200) {
-            return `La sauvegarde de la commande a échoué: ${res.status} - ${res.statusText}`
-        } else {
+        try {
+            const res = await axios.put('/api/order', {
+                slug: customer.slug,
+                delivery,
+                order: customer.order
+            })
             // The server might have updated the order status (indicating that the order was confirmed too late)
             // So, we need to mutate the state with this new order data to be able to handle that case
             mutateCustomer({ ...customer, ...{ order: orderFromApiCallResult(res.data) } })
             return ''
+        } catch(e: any ) {
+            return `La sauvegarde de la commande a échoué: ${extractUiError(e)}`
         }
     }
 

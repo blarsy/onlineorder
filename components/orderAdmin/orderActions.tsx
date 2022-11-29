@@ -4,6 +4,7 @@ import axios from "axios"
 import { ConnectionData, OrderCustomer } from "../../lib/common"
 import { Box } from '@mui/material'
 import TaskError from './taskError'
+import { extractUiError } from '../../lib/form/formCommon'
 
 interface Props {
     orderCustomer: OrderCustomer,
@@ -23,7 +24,7 @@ const OrderActions = ({ orderCustomer, connectionData } : Props) => {
                 orderCustomer.order.id = Number(res.data)
                 setStatus({ loading: false, error: '' })
             } catch (e: any) {
-                setStatus({ loading: false, error: e.toString() })
+                setStatus({ loading: false, error: extractUiError(e) })
             }
             
         }}>Créer</LoadingButton>}

@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios'
 import { setLocale } from 'yup'
 import { CustomerData, DeliveryTimes, OrderData } from '../common'
 import { EnrichedSalesCycle } from './salesCycleCache'
@@ -53,4 +54,24 @@ export const TaskNames = {
   UpdateQuantitiesSheet: 'Mise à jour du tableau de quantité',
   UpdateCustomers: 'Mise à jour clients',
   UpdateProducts: 'Mise à jour produits'
+}
+
+export const extractUiError = (e: any): string => {
+  if(e as AxiosError) {
+      const res = (e as AxiosError).response!
+      if(res){
+        const resData = res.data
+        if (resData) {
+          const errorProp = (resData as {error: string}).error
+          if(errorProp) {
+            return errorProp
+          } else {
+            return `Erreur serveur: code ${res.status}, status: ${res.statusText}, data: ${res.data}`
+          }
+        }
+      } else {
+        return (e as AxiosError).message
+      }
+  }
+  return e.toString()
 }

@@ -18,6 +18,7 @@ import SheetsSelect from './sheetsSelect'
 import CreateCampaign from './createCampaign'
 import Loader from '../form/loader'
 import { getData } from '../../lib/form/salesCycleCache'
+import { extractUiError } from '../../lib/form/formCommon'
 
 interface Props {
     connectionData: ConnectionData
@@ -39,19 +40,7 @@ const Campaign = ({ connectionData } : Props) => {
             const { salesCycle } = await getData()
             setCurrentCampaignInfo({loading: false, error: '', salesCycle})
         } catch(e: any) {
-            let error
-            if(e as AxiosError) {
-                const serverError = ((e as AxiosError).response!.data as {error: string}).error
-                if(serverError === 'No campaign found') {
-                    error = 'Aucune campagne active pour le moment, créez-en une avant tout autre chose.'
-                } else {
-                    error = serverError
-                }
-            } else {
-                error = e.toString()
-            }
-
-            setCurrentCampaignInfo({loading: false, error, salesCycle: undefined})
+            setCurrentCampaignInfo({loading: false, error: extractUiError(e), salesCycle: undefined})
         }
     }
 
@@ -77,7 +66,7 @@ const Campaign = ({ connectionData } : Props) => {
                 <Button onClick={() => setCreateCampaignOpen(false)}>Annuler</Button>
             </DialogActions>
         </Dialog>
-        { currentCampaignInfo.error.includes('No campaign found') ? <Alert severity="info">Aucune campagne active pour le moment</Alert>
+        { currentCampaignInfo.error.includes('Aucune campagne active') ? <Alert severity="info">Aucune campagne active pour le moment</Alert>
         :(        <Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
             <Paper elevation={4} sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center', padding: '1rem', gap: '0.5rem' }}>
                 <Typography variant="h6">Campagne en cours. Livraisons: {easyDateTime(new Date(currentCampaignInfo.salesCycle?.deliveryDate!))}</Typography>
@@ -90,7 +79,7 @@ const Campaign = ({ connectionData } : Props) => {
                         await axios.patch('/api/campaign', { message, signature, customers: 1 })
                         setUpdatingCustomers({ working: false, error: '' })
                     } catch(e: any) {
-                        setUpdatingCustomers({ working: false, error: e.toString() })
+                        setUpdatingCustomers({ working: false, error: extractUiError(e) })
                     }
                 }} >Mettre à jour les clients</LoadingButton>
                 { updatingCustomers.error && <Alert severity='error'>{updatingCustomers.error}</Alert>}
@@ -104,7 +93,7 @@ const Campaign = ({ connectionData } : Props) => {
                         const signature = await connectionData.signer?.signMessage(message)
                         await axios.patch('/api/campaign', { message, signature, products: 1, sheetId: values.sheetId })
                     } catch(e: any) {
-                        setUpdatingProductsError(e.toString())
+                        setUpdatingProductsError(extractUiError(e))
                     }
                 }}>
                 {({ isSubmitting, getFieldProps, values }) => (

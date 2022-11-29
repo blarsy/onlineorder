@@ -2,6 +2,7 @@ import { FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/mate
 import axios from 'axios'
 import { ErrorMessage, FieldInputProps } from 'formik'
 import { useState, useEffect } from 'react'
+import { extractUiError } from '../../lib/form/formCommon'
 import Loader from '../form/loader'
 
 interface Props {
@@ -17,7 +18,7 @@ const SheetsSelect = ({ fieldProps }: Props) => {
                 const res = await axios.get('/api/sheets')
                 setSheets({ loading: false, error: '', sheets: res.data as {id: number, title: string}[]})
             } catch(e: any) {
-                setSheets({ loading: false, error: e.toString(), sheets: null })
+                setSheets({ loading: false, error: extractUiError(e), sheets: null })
             }
         }
         loadSheets()

@@ -13,6 +13,7 @@ import { addWorkingDays, findNextWeekdayTime } from '../../lib/dateWeek'
 import Submit from '../form/submit'
 import { easyDate, getDeliveryTimeLabel, ConnectionData, DeliveryTimes } from '../../lib/common'
 import SheetsSelect from './sheetsSelect'
+import { extractUiError } from '../../lib/form/formCommon'
 
 interface Props {
     connectionData: ConnectionData,
@@ -84,7 +85,7 @@ const CreateCampaign = ({ connectionData, onCreated } : Props) => {
                 setCreationError('')
                 onCreated()
             } catch (e) {
-                setCreationError((e as Error).toString())
+                setCreationError(extractUiError(e))
             }
         }}
     >
