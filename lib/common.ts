@@ -165,8 +165,8 @@ export const displayDeliveryDayPrefs = (deliveryDate: DeliveryTime) => {
 export const getDeliveryTimeLabel = (deliveryTime : DeliveryTimes) => `${deliveryTime}-${Number(deliveryTime)+1}`
 
 const zeroPad = (num: number, places: number) => String(num).padStart(places, '0')
-export const easyDate = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit" })
-export const easyDateTime = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+export const easyDate = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", timeZone: 'Europe/Brussels' })
+export const easyDateTime = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: 'Europe/Brussels' })
 
 export const deliveryPrefsToString = (deliveryTimes: DeliveryTime[]): string => {
     return `Préférences livraison :\n${deliveryTimes.map(deliveryDay => displayDeliveryDayPrefs(deliveryDay)).join('\n')}`
