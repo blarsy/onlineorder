@@ -1,5 +1,7 @@
 import { ethers } from "ethers";
 
+process.env.TZ = 'Europe/Brussels'
+
 export interface ConnectionData {
     walletAddress: string,
     signer: ethers.providers.JsonRpcSigner | null
