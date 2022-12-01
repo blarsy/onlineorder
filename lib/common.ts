@@ -1,7 +1,5 @@
 import { ethers } from "ethers";
 
-process.env.TZ = 'Europe/Brussels'
-
 export interface ConnectionData {
     walletAddress: string,
     signer: ethers.providers.JsonRpcSigner | null
@@ -167,9 +165,8 @@ export const displayDeliveryDayPrefs = (deliveryDate: DeliveryTime) => {
 export const getDeliveryTimeLabel = (deliveryTime : DeliveryTimes) => `${deliveryTime}-${Number(deliveryTime)+1}`
 
 const zeroPad = (num: number, places: number) => String(num).padStart(places, '0')
-const week = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
-export const easyDate = (date: Date) => `${week[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`
-export const easyDateTime = (date: Date) => `${week[date.getDay()]} ${zeroPad(date.getDate(), 2)}/${zeroPad((date.getMonth() + 1), 2)} ${zeroPad(date.getHours(), 2)}:${zeroPad(date.getMinutes(), 2)}`
+export const easyDate = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit" })
+export const easyDateTime = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", hour: "2-digit", minute: "2-digit" })
 
 export const deliveryPrefsToString = (deliveryTimes: DeliveryTime[]): string => {
     return `Préférences livraison :\n${deliveryTimes.map(deliveryDay => displayDeliveryDayPrefs(deliveryDay)).join('\n')}`
