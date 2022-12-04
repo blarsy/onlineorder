@@ -1,7 +1,8 @@
-//import './types'
 import Odoo from 'odoo-await'
 import { deliveryPrefsToString, NonLocalProductData, OrderData, ProductData } from '../common'
 import config from '../serverConfig'
+
+const verbose = false
 
 export interface OdooProduct {
     name: string,
@@ -30,11 +31,11 @@ interface OdooOrderLine {
     price_unit: number
 }
 
-let connection: any
+
 let connectionPromise: Promise<any> | undefined
 export const getOdooConnection = async (): Promise<any> => {
     if(!connectionPromise) {
-        connection = new Odoo(config.connectionInfo)
+        const connection = new Odoo(config.connectionInfo)
         connectionPromise = new Promise((resolve, reject) => {
             connection.connect().then(() => resolve(connection))
         })
@@ -42,18 +43,67 @@ export const getOdooConnection = async (): Promise<any> => {
     return connectionPromise as Promise<any>
 }
 
-export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCategory> => {
-    const odoo = await getOdooConnection()
 
+const tryCreate = async (model: string, object: any): Promise<number> => {
+    if(verbose) console.log('create', model, object)
+    try {
+        const conn = await getOdooConnection()
+        const result = await conn.create(model, object)
+        if(verbose) console.log('result', result)
+        return result
+    } catch (e) {
+        console.log('Odoo create error', e)
+        throw e
+    }
+}
+const tryRead = async (model: string,  filter: any, fields: any): Promise<Array<any>> => {
+    if(verbose) console.log('read', model, filter, fields)
+    
+    try {
+        const conn = await getOdooConnection()
+        const result = await conn.read(model, filter, fields)
+        if(verbose) console.log('result', result)
+        return result
+    } catch (e) {
+        console.log('Odoo read error', e)
+        throw e
+    }
+}
+const trySearch = async (model: string, filter: any): Promise<Array<any>> => {
+    if(verbose) console.log('search', model, filter)
+    try {
+        const conn = await getOdooConnection()
+        const result = await conn.search(model, filter)
+        if(verbose) console.log('result', result)
+        return result
+    } catch (e) {
+        console.log('Odoo search error', e)
+        throw e
+    }
+}
+const trySearchRead = async (model: string, filter: any, fields: any ): Promise<Array<any>> => {
+    if(verbose) console.log('searchRead', model, filter, fields)
+    try {
+        const conn = await getOdooConnection()
+        const result = await conn.searchRead(model, filter, fields)
+        if(verbose) console.log('result', result)
+        return result
+    } catch (e) {
+        console.log('Odoo searchRead error', e)
+        throw e
+    }
+}
+
+export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCategory> => {
     const categories = ['Légume', 'Aromatique', 'Fruit']
     const outOfCoopCategory = 'Hors Coop'
-    const outOfCoopTagIdsPromise = await odoo.search(`product.tag`, { name: outOfCoopCategory})
-    const tagIds = await odoo.search(`product.tag`, { name: categories})
-    const tagsAndIds = await odoo.read('product.tag', tagIds, ['name']) as {id: number, name: string}[]
+    const outOfCoopTagIdsPromise = await trySearch(`product.tag`, { name: outOfCoopCategory})
+    const tagIds = await trySearch(`product.tag`, { name: categories})
+    const tagsAndIds = await tryRead('product.tag', tagIds, ['name']) as {id: number, name: string}[]
     const categoryId = {} as {[name: string]: number}
     tagsAndIds.forEach(tagId => categoryId[tagId.name] = tagId.id)
 
-    const products = await odoo.searchRead('product.product', 
+    const products = await trySearchRead('product.product', 
         { product_tag_ids: tagIds },
         ['name', 'product_tag_ids', 'standard_price', 'list_price', 'uom_id']) as Array<any>
 
@@ -85,16 +135,15 @@ export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCate
 }
 
 export const getLocalProductsByCategories = async (): Promise<OdooProductsByCategory> => {
-    const odoo = await getOdooConnection()
     const categories = ['Légume', 'Aromatique', 'Fruit']
-    const tagIds = await odoo.search(`product.tag`, { name: categories})
-    const tagsAndIds = await odoo.read('product.tag', tagIds, ['name']) as {id: number, name: string}[]
+    const tagIds = await trySearch(`product.tag`, { name: categories})
+    const tagsAndIds = await tryRead('product.tag', tagIds, ['name']) as {id: number, name: string}[]
     const categoryId = {} as {[name: string]: number}
     tagsAndIds.forEach(tagId => categoryId[tagId.name] = tagId.id)
 
-    const excludedTagIds = await odoo.search('product.tag', { name: ['Hors Coop'] }) as number[]
+    const excludedTagIds = await trySearch('product.tag', { name: ['Hors Coop'] }) as number[]
 
-    const products = await odoo.searchRead('product.product', 
+    const products = await trySearchRead('product.product', 
         ['&', ['product_tag_ids', 'in', tagIds], ['product_tag_ids', 'not in', excludedTagIds]],
         ['name', 'product_tag_ids', 'standard_price', 'list_price', 'uom_id']) as Array<any>
 
@@ -116,15 +165,14 @@ export const getLocalProductsByCategories = async (): Promise<OdooProductsByCate
 }
 
 export const getProducers = async (): Promise<OdooProducersByCategory> => {
-    const odoo = await getOdooConnection()
-
     const categories = ['Producteur', 'Cultures planifiées']
-    const tagIds = await odoo.search(`res.partner.category`, { name: categories})
-    const categoriesAndIds = await odoo.read('res.partner.category', tagIds, ['name']) as {name: string,id: number}[]
+    const tagIds = await trySearch(`res.partner.category`, { name: categories})
+    const categoriesAndIds = await tryRead('res.partner.category', tagIds, ['name']) as {name: string,id: number}[]
     const idOfCategory = {} as {[name: string]: number}
     categoriesAndIds.forEach(cat => idOfCategory[cat.name] = cat.id)
-    const producersIds = await odoo.search('res.partner', { 'category_id': tagIds })
-    const producers = await odoo.read('res.partner', producersIds, ['name', 'category_id']) as Array<any>
+    const producersIds = await trySearch('res.partner', { 'category_id': tagIds })
+
+    const producers = await tryRead('res.partner', producersIds, ['name', 'category_id']) as Array<any>
     const result = {} as OdooProducersByCategory
     categories.forEach(category => {
         const categoryId = idOfCategory[category]
@@ -136,8 +184,6 @@ export const getProducers = async (): Promise<OdooProducersByCategory> => {
 }
 
 export const createOrder= async(order: OrderData, customerId: number, products: ProductData[], nonLocalProducts: NonLocalProductData[]): Promise<number> => {
-    const odoo = await getOdooConnection()
-
     const productPrices = {} as {[productId: number]: number}
     products.forEach(product => productPrices[product.id] = product.price)
 
@@ -161,7 +207,7 @@ export const createOrder= async(order: OrderData, customerId: number, products: 
     let note = order.note ? `Note client : ${order.note}\n`: ''
     note += deliveryPrefsToString(order.preferredDeliveryTimes)
     
-    const orderId = await odoo.create('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
+    const orderId = await tryCreate('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
         note,
         order_line: {
             action: 'create',

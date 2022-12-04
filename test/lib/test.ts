@@ -1,11 +1,7 @@
 import creds from '../../google-creds.json'
 import config, { setConfig } from '../../lib/serverConfig'
-import { connectSpreadsheet, getDocs } from "../../lib/data/google"
-import { docs_v1 } from "googleapis"
-import { getCampaignProductsData } from '../../lib/data/dataFile'
-import { createProductTables } from '../../lib/data/offerFile'
-import { getOdooConnection } from '../../lib/data/odoo'
-import { getProducersOfWhomToRepeatQuantities, updateQuantitiesSheet } from '../../lib/data/productQuantitiesSheet'
+import { parseProductSheet } from '../../lib/data/productQuantitiesSheet'
+
 jest.setTimeout(20000)
 
 test('Autofill offer doc', async () => {
@@ -21,7 +17,17 @@ test('Autofill offer doc', async () => {
         volumesFileName: 'testvolumes.json'
     })
 
-    console.log(await getProducersOfWhomToRepeatQuantities(config.googleSheetIdProducts, 14))
+    const res = await parseProductSheet(config.googleSheetIdProducts, 2066779984)
+    console.log(res)
+    //await parseProductSheet(config.googleSheetIdProducts, 2042364649, true)
+
+    //await new OdooXmlRpc(config.connectionInfo).connect()
+
+
+
+    
+
+    //console.log(await getProducersOfWhomToRepeatQuantities(config.googleSheetIdProducts, 14))
 
     // const docs = getDocs()
     // const theDoc = await docs.documents.get({ documentId: config.googleDocIdOffer })

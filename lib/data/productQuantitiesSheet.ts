@@ -1,9 +1,13 @@
 import { getWeek } from '../dateWeek'
-import { easyDate, easyDateTime } from '../common'
+import { easyDate } from '../common'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
 import config from '../serverConfig'
 import { sheets_v4 } from 'googleapis'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+
+dayjs.extend(customParseFormat)
 
 interface ProductQuantities {
     [productId: number]:{
@@ -30,7 +34,7 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
-const getAllSheetsOfSpreadsheet = async (spreadsheetId: string): Promise<sheets_v4.Schema$Sheet[]> => {
+export const getAllSheetsOfSpreadsheet = async (spreadsheetId: string): Promise<sheets_v4.Schema$Sheet[]> => {
     const sheets = getSheets()
     return (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets!
 }
@@ -38,11 +42,12 @@ const getAllSheetsOfSpreadsheet = async (spreadsheetId: string): Promise<sheets_
 export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number, copyPlannedCropsOnly = true) => {
     let initialData = undefined as AvailableProductsSnapshot | undefined
     let initialDataPromise = undefined
+
     if(sourceSheetId) {
         initialDataPromise = parseProductSheet(config.googleSheetIdProducts, sourceSheetId, copyPlannedCropsOnly)
     }
-
     const spreadSheetsheets = await getAllSheetsOfSpreadsheet(config.googleSheetIdProducts)
+
 
     const newSheetId = await createNewSheet(
         config.googleSheetIdProducts,
@@ -53,6 +58,7 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
     if(initialDataPromise) {
         initialData = await initialDataPromise
     }
+
     await createProductsSheet(config.googleSheetIdProducts, 
         newSheetId, delivery, deadline,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], initialData)
@@ -96,13 +102,15 @@ const getValidName = (title: string, spreadSheetsheets: sheets_v4.Schema$Sheet[]
     let targetSheet = null
     let currentTitle = title
     let num = 1
+
     do {
-        targetSheet = spreadSheetsheets.find(sheet => sheet.properties?.title === title)
+        targetSheet = spreadSheetsheets.find(sheet => sheet.properties?.title === currentTitle)
         
         if(targetSheet){
             currentTitle = `${title}(${num ++})`
         }
     } while(targetSheet)
+
     return currentTitle
 }
 
@@ -142,12 +150,23 @@ const getProductSheetInput =  async (): Promise<ProductSheetInput> => {
 const toSheetDate = (date : Date): number => {
     const refDate = new Date(1899, 11, 30, 0, 0, 0, 0).getTime()
     const millisecondsInADay = 1000 * 60 * 60 * 24
-    return (date.getTime() - refDate) / millisecondsInADay
+    // Cheap trick: Google sheet does not handle time zones for date
+    // Convert to belgian timezone, parse it again to an UTC that includes the timezone offset
+    const local = date.toLocaleDateString('fr-BE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Brussels' })
+    const [, day, month, year, hour, minute, second] = /(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})/.exec(local)!
+    const fakedUtcDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`)
+    return (fakedUtcDate.getTime() - refDate) / millisecondsInADay
 }
 const fromSheetDate = (num : number): Date => {
     const refDate = new Date(1899, 11, 30, 0, 0, 0, 0).getTime()
     const millisecondsInADay = 1000 * 60 * 60 * 24
-    return new Date(num * millisecondsInADay + refDate)
+    const dateInSheet = new Date(num * millisecondsInADay + refDate)
+    const regexResults = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/.exec(dateInSheet.toISOString())
+    if(regexResults) {
+        const [, year, month, day, hour, minute, second] = regexResults
+        return dayjs(`${day}/${month}/${year} ${hour}:${minute}:${second}`, 'DD/MM/YYYY HH:mm:ss', 'fr-BE').toDate()
+    }
+    throw new Error (`could not parse date ${dateInSheet.toISOString()}`)
 }
 
 export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, deadline: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
@@ -202,9 +221,6 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                 },{
                     range: `${targetSheet?.properties?.title}!A${firstDataRow - 1}:${getA1Notation(firstDataRow - 1, lastHeaderCol)}`,
                     values: [colTitles]
-                }, {
-                    range: `${targetSheet?.properties?.title}!B1:E1`,
-                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, `Clôture: ${easyDateTime(deadline)}` ]]
                 }, {
                     range: `${targetSheet?.properties?.title}!B1:F1`,
                     values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, 'Clôture:', toSheetDate(deadline) ]]
