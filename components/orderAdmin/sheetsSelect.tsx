@@ -24,7 +24,7 @@ const SheetsSelect = ({ fieldProps }: Props) => {
         loadSheets()
     }, [])
     return (<Loader loading={sheets.loading} error={sheets.error}>
-        <FormControl>
+        <FormControl size="small">
             <InputLabel id="labelsheet">Source</InputLabel>
             <Select
                 { ...fieldProps}

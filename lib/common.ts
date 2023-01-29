@@ -82,11 +82,17 @@ export interface SalesCycle {
     products: ProductData[],
     nonLocalProducts: NonLocalProductData[],
     customers: CustomerData[],
-    deliveryDate: Date,
     creationDate: Date,
     deadline: Date,
-    availableDeliveryTimes: AvailableDeliveryTime[],
+    deliverySchemes: DeliveryScheme[],
 }
+
+export interface DeliveryScheme {
+    productCategories: string[]
+    delivery: Date
+    deliveryTimes: AvailableDeliveryTime[]
+}
+
 
 export interface AvailableDeliveryTime {
     day: Date,
@@ -138,12 +144,15 @@ export interface TaskLogEntry {
 
 export const restoreTypes = (salesCycle: SalesCycle) => {
     salesCycle.creationDate = new Date(salesCycle.creationDate)
-    salesCycle.deliveryDate = new Date(salesCycle.deliveryDate)
     salesCycle.deadline = new Date(salesCycle.deadline)
-    salesCycle.availableDeliveryTimes = salesCycle.availableDeliveryTimes.map(adt => ({ 
-        day: new Date(adt.day),
-        times: adt.times.map(time => ensureDeliveryTime(time) )
-    }))
+    salesCycle.deliverySchemes = salesCycle.deliverySchemes.map(scheme => <DeliveryScheme>{
+        delivery: new Date(scheme.delivery),
+        productCategories: scheme.productCategories,
+        deliveryTimes: scheme.deliveryTimes.map(adt => ({ 
+            day: new Date(adt.day),
+            times: adt.times.map(time => ensureDeliveryTime(time) )
+        }))
+    })
 }
 
 const ensureDeliveryTime = (value: string | DeliveryTimes): DeliveryTimes => {

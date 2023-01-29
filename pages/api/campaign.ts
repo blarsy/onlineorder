@@ -5,12 +5,25 @@ import { handleException } from '../../lib/request'
 import config from '../../lib/serverConfig'
 import queue from '../../lib/tasksQueue/queue'
 import Task from '../../lib/tasksQueue/task'
-import { AvailableDeliveryTime, SalesCycle } from '../../lib/common'
+import { AvailableDeliveryTime, DeliveryScheme, SalesCycle } from '../../lib/common'
 import { TaskNames } from '../../lib/form/formCommon'
 
 type Data = {
   error: string
 } | SalesCycle
+
+const validateDeliverySchemes = (deliverySchemes: any[]): string => {
+    for(const scheme of deliverySchemes) {
+        if(!scheme.delivery || isNaN(new Date(scheme.delivery).getTime()) || new Date(scheme.delivery) < new Date() ) {
+            return 'A delivery date is missing of invalid'
+        } else if(!scheme.deliveryTimes || !scheme.deliveryTimes.length || scheme.deliveryTimes.length === 0){
+            return 'MIssing delivery hours'
+        } else if(!scheme.productCategories || scheme.productCategories.length === 0) {
+            return 'Missing product category: at least one should be provided'
+        }
+    }
+    return ''
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,21 +35,25 @@ export default async function handler(
             if(!config.authorizedSigners.find(authorizedSigner => authorizedSigner === signerAddress)){
                 res.status(500).json({ error: 'Unauthorized' })
             } else {
-                if(!req.body.delivery || isNaN(new Date(req.body.delivery).getTime()) || new Date(req.body.delivery) < new Date() ){
-                    res.status(500).json({ error: 'Invalid or missing delivery date' })
+                if (!req.body.sheetId || isNaN(Number(req.body.sheetId)) ) {
+                    res.status(500).json({ error: 'Invalid or missing sheetId' })
                 } else if (!req.body.deadline || isNaN(new Date(req.body.deadline).getTime())){
                     res.status(500).json({ error: 'Invalid or missing deadline' })
-                } else if (!req.body.deliveryTimes || !req.body.deliveryTimes.length || req.body.deliveryTimes.length === 0 ) {
-                    res.status(500).json({ error: 'Invalid or missing delivery times' })
-                } else if (!req.body.sheetId || isNaN(Number(req.body.sheetId)) ) {
-                    res.status(500).json({ error: 'Invalid or missing sheetId' })
-                }{
-                    queue.enqueue(
-                        new Task([new Date(req.body.delivery), new Date(req.body.deadline), req.body.sheetId, req.body.deliveryTimes], 
-                        async (args: any[]) => {
-                            await createDataFile(args[0] as Date, args[1] as Date, args[2] as number, args[3] as AvailableDeliveryTime[])
-                        }, TaskNames.CreateCampaign))
-                    res.status(200).json({ error: '' })
+                } else if (!req.body.deliverySchemes || req.body.deliverySchemes.length === 0) {
+                    res.status(500).json({ error: 'Missing delivery schemes' })
+                } else {
+                    const schemesError = validateDeliverySchemes(req.body.deliverySchemes)
+                    if(schemesError) {
+                        res.status(500).json({ error: schemesError })
+                    } else {
+                        console.log(req.body)
+                        queue.enqueue(
+                            new Task([new Date(req.body.deadline), req.body.sheetId, req.body.deliverySchemes], 
+                            async (args: any[]) => {
+                                await createDataFile(args[0] as Date, args[1] as number, args[2] as DeliveryScheme[])
+                            }, TaskNames.CreateCampaign))
+                        res.status(200).json({ error: '' })
+                    }
                 }
             }
         } catch(e) {

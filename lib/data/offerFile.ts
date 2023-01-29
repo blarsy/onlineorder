@@ -20,7 +20,8 @@ export const createProductTables = async (products: ProductData[], nonLocalProdu
     const subtitles = {
         'Légume': 'Première gamme, certifiée bio ou en conversion',
         'Aromatique' : 'Plein de goûts en frais, ou en séché',
-        'Fruit': 'Nos fruits locaux et bios ou en conversion'
+        'Fruit': 'Nos fruits locaux et bios ou en conversion',
+        'Produit laitier': 'Le lait bio local et ses dérivés'
     } as {[cat: string]: string}
 
     const nonLocalCells = [] as StyledText[]

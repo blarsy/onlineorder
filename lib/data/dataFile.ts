@@ -1,6 +1,6 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { drive_v3 } from 'googleapis'
-import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime, restoreTypes } from '../common'
+import { ProductData, CustomerData, NonLocalProductData, SalesCycle, AvailableDeliveryTime, restoreTypes, DeliveryScheme } from '../common'
 import { getWorkingFolder, connectSpreadsheet, connectDrive, createRemoteFile, updateFile, getFileContent, getFileId } from './google'
 import { getProductsForOnlineOrdering } from './odoo'
 import { calculateQuantity, parseProductSheet } from './productQuantitiesSheet'
@@ -77,7 +77,7 @@ export const getCampaignProductsData = async(docCustomersAndOther : GoogleSpread
   return { products, nonLocalProducts }
 }
 
-export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceSheetId: number, availableDeliveryTimes: AvailableDeliveryTime[]): Promise<drive_v3.Schema$File> => {
+export const createDataFile = async (deadline: Date, sourceSheetId: number, deliverySchemes: DeliveryScheme[]): Promise<drive_v3.Schema$File> => {
     const servicePromise = connectDrive()
     const insertionPointPromise = getInsertionPoint()
     const docCustomersAndOther = await connectSpreadsheet(config.googleSheetIdCustomers)
@@ -90,8 +90,7 @@ export const createDataFile = async (deliveryDate: Date, deadline: Date, sourceS
 
     const customers = await customersPromise
 
-    const salesCycle = {products, nonLocalProducts, customers, availableDeliveryTimes,
-      deliveryDate, creationDate: new Date(), deadline }
+    const salesCycle = {products, nonLocalProducts, customers, deliverySchemes, creationDate: new Date(), deadline }
 
     const createVolumesFilePromise = createVolumesFile(salesCycle)
     const service = await servicePromise

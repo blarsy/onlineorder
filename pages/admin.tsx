@@ -28,7 +28,7 @@ const Admin: NextPage = () => {
                 const signer = provider.getSigner()
                 setConnectionData({ walletAddress: await signer.getAddress(), signer })
             } catch (ex) {
-                setError('There was a failure connecting your wallet accoubt.')
+                setError('There was a failure connecting your wallet account.')
             }
         } else {
             setError('Could not detect Metamask, is it installed ?')

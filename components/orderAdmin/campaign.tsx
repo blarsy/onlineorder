@@ -7,7 +7,7 @@ import PeopleAlt from '@mui/icons-material/PeopleAlt'
 import Storefront from '@mui/icons-material/Storefront'
 import { LoadingButton } from '@mui/lab'
 import { useState, useEffect } from 'react'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import {
     Formik,
     Form,
@@ -48,6 +48,16 @@ const Campaign = ({ connectionData } : Props) => {
         loadCampaign()
     }, [])
 
+    const getCampaignDeliveryDates = (salesCycle?: SalesCycle): string => {
+        if(salesCycle) {
+            const dates = salesCycle.deliverySchemes.map(scheme => scheme.delivery)
+                .sort()
+                .map(date => easyDateTime(date))
+            return dates.join(' - ')
+        }
+        return ''
+    }
+
     return <Box display="flex" flexDirection="column" gap="1rem" alignItems="center">
         <Typography variant="body1">Les quantités dans la feuillle de quantités sont clôturées ? C&apos;est le moment de créer une nouvelle campagne.</Typography>
         <Button variant="contained" onClick={() => setCreateCampaignOpen(true)}>Nouvelle campagne</Button>
@@ -67,9 +77,9 @@ const Campaign = ({ connectionData } : Props) => {
             </DialogActions>
         </Dialog>
         { currentCampaignInfo.error.includes('Aucune campagne active') ? <Alert severity="info">Aucune campagne active pour le moment</Alert>
-        :(        <Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
+        :(<Loader loading={currentCampaignInfo.loading} error={currentCampaignInfo.error}>
             <Paper elevation={4} sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center', padding: '1rem', gap: '0.5rem' }}>
-                <Typography variant="h6">Campagne en cours. Livraisons: {easyDateTime(new Date(currentCampaignInfo.salesCycle?.deliveryDate!))}</Typography>
+                <Typography variant="h6">Campagne en cours. Livraisons: {getCampaignDeliveryDates(currentCampaignInfo.salesCycle)}</Typography>
                 <Typography variant="body1">Des clients ajoutés ? ou leurs infos ont été mises à jours ? C&apos;est ici:</Typography>
                 <LoadingButton loading={updatingCustomers.working} loadingPosition="start" variant="contained" startIcon={<PeopleAlt />} onClick={async () => {
                     setUpdatingCustomers({ working: true, error: '' })
@@ -96,7 +106,7 @@ const Campaign = ({ connectionData } : Props) => {
                         setUpdatingProductsError(extractUiError(e))
                     }
                 }}>
-                {({ isSubmitting, getFieldProps, values }) => (
+                {({ isSubmitting, getFieldProps }) => (
                     <Stack sx={{ border: '1px solid #444', padding: '0.5rem'}} component={Form} gap="0.5rem">
                         <Typography variant="body1">Des produits ajoutés dans la feuille de quantité ? ou leurs infos ont été mises à jours ? C&apos;est ici:</Typography>
                         <SheetsSelect fieldProps={getFieldProps('sheetId')} />
