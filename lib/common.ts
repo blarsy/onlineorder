@@ -142,6 +142,16 @@ export interface TaskLogEntry {
     error?: string
 }
 
+export interface InputDeliveryDate {
+    productCategories: string[]
+    date: string
+}
+
+export interface DeliveryDate {
+    productCategories: string[]
+    date: Date
+}
+
 export const restoreTypes = (salesCycle: SalesCycle) => {
     salesCycle.creationDate = new Date(salesCycle.creationDate)
     salesCycle.deadline = new Date(salesCycle.deadline)

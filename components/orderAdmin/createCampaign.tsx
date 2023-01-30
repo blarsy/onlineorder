@@ -90,7 +90,7 @@ const CreateCampaign = ({ connectionData, onCreated } : Props) => {
                         (val, ctx) => !!val && (val > ctx.options.context!.deadline)
                     ),
                     deliveryTimes: yup.object(initialDeliveryTimesValidationSchema()).test('AtLeast1DeliveryTime', 'Veuillez sélectionner au moins une plage horaire de livraison.', hasAtLeastOneDeliveryTimeSelected)
-                })).min(1).required('Veuillez configurer au moins un créneau de livraison.')
+                })).min(1, 'Veuillez configurer au moins un créneau de livraison.')
             })
             try {
                 //need to do it this way - and not via the classical 'validationSchema' Formik prop, 

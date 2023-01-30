@@ -5,16 +5,16 @@ import { registerOrderQuantities } from "./volumesFile"
 import config from '../serverConfig'
 import { drive_v3 } from "googleapis";
 
-const getCampaignFolderId = async(delivery: Date) : Promise<[string, drive_v3.Drive]> => {
+const getCampaignFolderId = async(campaignId: string) : Promise<[string, drive_v3.Drive]> => {
     const service = await connectDrive()
     const workingFolder = await getWorkingFolder(service, config.workingFolderName)
-    const weekFolder = await getOrCreateFolder(service, delivery.toISOString(), workingFolder.id!)
+    const weekFolder = await getOrCreateFolder(service, campaignId, workingFolder.id!)
     return [weekFolder.id!, service]
 }
 
-export const saveOrder = async (order : OrderData, customerSlug: string, delivery: Date): Promise<OrderData> => {
+export const saveOrder = async (order : OrderData, customerSlug: string, campaignId: string): Promise<OrderData> => {
     const fileContentPromise = getDataFileContent()
-    const campaignFolderPromise = getCampaignFolderId(delivery)
+    const campaignFolderPromise = getCampaignFolderId(campaignId)
 
     order.slug = customerSlug
 
@@ -33,10 +33,10 @@ export const saveOrder = async (order : OrderData, customerSlug: string, deliver
     return order
 }
 
-export const getOrder = async (delivery: Date, slug: string): Promise<{order: OrderData, fileId: string} | null> => {
+export const getOrder = async (campaignId: string, slug: string): Promise<{order: OrderData, fileId: string} | null> => {
     const service = await connectDrive()
     const workingFolder = await getWorkingFolder(service, config.workingFolderName)
-    const campaignFolder = await getOrCreateFolder(service, delivery.toISOString(), workingFolder.id!)
+    const campaignFolder = await getOrCreateFolder(service, campaignId, workingFolder.id!)
     const fileId = await getFileId(service, slug + '.json', campaignFolder.id!)
     if(fileId){
         const fileContent = await getFileContent(service, fileId)
@@ -48,11 +48,11 @@ export const getOrder = async (delivery: Date, slug: string): Promise<{order: Or
     return null
 }
 
-export const getOrderCustomers = async (delivery: Date): Promise<OrderCustomer[]> => {
+export const getOrderCustomers = async (campaignId: string): Promise<OrderCustomer[]> => {
     const fileContentPromise = getDataFileContent()
     const service = await connectDrive()
     const workingFolder = await getWorkingFolder(service, config.workingFolderName)
-    const campaignFolder = await getOrCreateFolder(service, delivery.toISOString(), workingFolder.id!)
+    const campaignFolder = await getOrCreateFolder(service, campaignId, workingFolder.id!)
     const ordersPromise = getOrdersInFolder(service, campaignFolder.id!)
 
     const salesCycle = await fileContentPromise

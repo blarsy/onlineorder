@@ -5,7 +5,7 @@ import { handleException } from '../../lib/request'
 import config from '../../lib/serverConfig'
 import queue from '../../lib/tasksQueue/queue'
 import Task from '../../lib/tasksQueue/task'
-import { AvailableDeliveryTime, DeliveryScheme, SalesCycle } from '../../lib/common'
+import { DeliveryScheme, SalesCycle } from '../../lib/common'
 import { TaskNames } from '../../lib/form/formCommon'
 
 type Data = {

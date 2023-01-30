@@ -1,7 +1,7 @@
 import { DateTimePicker } from "@mui/x-date-pickers"
 import { Box, Checkbox, FormControlLabel, FormGroup, IconButton, InputLabel, Paper, Stack, TextField, TextFieldProps, Typography } from "@mui/material"
 import dayjs, { Dayjs } from "dayjs"
-import { ErrorMessage, Field, FieldInputProps, FormikTouched, getIn } from "formik"
+import { ErrorMessage } from "formik"
 import DeleteIcon from '@mui/icons-material/Delete'
 import { DeliveryTimes, easyDate, getDeliveryTimeLabel } from "../../lib/common"
 import { addWorkingDays } from "../../lib/dateWeek"
@@ -59,18 +59,18 @@ const DeliveryForProductCategories = ({ fieldName, setFieldValue, value, canRemo
             return <Box key={dayNumber} display="flex" alignItems="center" flexWrap="wrap">
                 <Box flex="0 0 3rem">{easyDate(addWorkingDays(value.delivery, dayNumber - 1))}</Box>
                 {allDeliveryTimes.map(deliveryTime => {
-                        const ctrlId = `${dayNumber}-${deliveryTime.toString()}`
-                        return <Box flex="0 0 5rem" key={ctrlId}>
-                            <FormControlLabel
-                                value="top"
-                                control={<Checkbox sx={{padding:0}} name={ctrlId}
-                                    checked={value.deliveryTimes[ctrlId]} onChange={(e, val) => {
-                                        setFieldValue(`${fieldName}.deliveryTimes.${ctrlId}`, val)
-                                    }}/>}
-                                checked={value.deliveryTimes[ctrlId] as boolean}
-                                label={getDeliveryTimeLabel(deliveryTime)}
-                                labelPlacement="top" />
-                        </Box>})
+                    const ctrlId = `${dayNumber}-${deliveryTime.toString()}`
+                    return <Box flex="0 0 5rem" key={ctrlId}>
+                        <FormControlLabel
+                            value="top"
+                            control={<Checkbox sx={{padding:0}} name={ctrlId}
+                                checked={value.deliveryTimes[ctrlId]} onChange={(e, val) => {
+                                    setFieldValue(`${fieldName}.deliveryTimes.${ctrlId}`, val)
+                                }}/>}
+                            checked={value.deliveryTimes[ctrlId] as boolean}
+                            label={getDeliveryTimeLabel(deliveryTime)}
+                            labelPlacement="top" />
+                    </Box>})
                 }
             </Box>
         })}

@@ -1,5 +1,4 @@
-import { getWeek } from '../dateWeek'
-import { easyDate } from '../common'
+import { DeliveryDate, easyDate } from '../common'
 import { getSheets } from './google'
 import { getProducers, getLocalProductsByCategories, OdooProducer, OdooProductsByCategory } from './odoo'
 import config from '../serverConfig'
@@ -18,7 +17,7 @@ interface ProductQuantities {
 }
 
 interface AvailableProductsSnapshot {
-    delivery: Date,
+    deliveryDates: DeliveryDate[],
     deadline: Date,
     productQuantities: ProductQuantities,
     productQuantitiesPlannedCrops: ProductQuantities,
@@ -34,12 +33,35 @@ interface ProductSheetInput {
     numberOfProducts: number
 }
 
+const toSheet = (deliveryDates: DeliveryDate[]): string => {
+    const lines = deliveryDates.map(deliveryDate => `${deliveryDate.productCategories.join(', ')}: ${dayjs(deliveryDate.date).format('DD/MM/YYYY HH:mm')}`)
+    return lines.join('\n')
+}
+
+export const fromSheetDeliveryDates = (sheetData: string): DeliveryDate[] => {
+    //Ignore cells that have no string content until next version of the software, otherwise
+    //the first creations of sheet after the deployment of the new version will fail
+    if(!sheetData) return []
+
+    const lines = sheetData.split('\n')
+    return lines.map(line => {
+        const reRes = /^(.*): (.*)/.exec(line)
+        if(!reRes || reRes.length < 3) throw new Error(`Could not parse delivery dates ${sheetData}`)
+        const categories = reRes![1]
+        const sheetDate = reRes![2]
+        return <DeliveryDate>{
+            date: dayjs(sheetDate, 'DD/MM/YYYY HH:mm').toDate(),
+            productCategories: categories.split(', ')
+        }
+    })
+}
+
 export const getAllSheetsOfSpreadsheet = async (spreadsheetId: string): Promise<sheets_v4.Schema$Sheet[]> => {
     const sheets = getSheets()
     return (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets!
 }
 
-export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date, sourceSheetId?: number, copyPlannedCropsOnly = true) => {
+export const createBlankQuantitiesSheet = async (deliveryDates: DeliveryDate[], deadline: Date, sourceSheetId?: number, copyPlannedCropsOnly = true) => {
     let initialData = undefined as AvailableProductsSnapshot | undefined
     let initialDataPromise = undefined
 
@@ -48,11 +70,10 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
     }
     const spreadSheetsheets = await getAllSheetsOfSpreadsheet(config.googleSheetIdProducts)
 
-
     const newSheetId = await createNewSheet(
         config.googleSheetIdProducts,
         spreadSheetsheets,
-        `Disponibilités pour livraison ${easyDate(delivery)}`,
+        `Disponibilités, clôture le ${easyDate(deadline)}`,
         { gridProperties: { columnCount: 50 } })
     
     if(initialDataPromise) {
@@ -60,7 +81,7 @@ export const createBlankQuantitiesSheet = async (delivery: Date, deadline: Date,
     }
 
     await createProductsSheet(config.googleSheetIdProducts, 
-        newSheetId, delivery, deadline,
+        newSheetId, deliveryDates, deadline,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], initialData)
 }
 
@@ -74,7 +95,7 @@ export const updateQuantitiesSheet = async(sourceSheetId: number): Promise<void>
 
     const currentData = await currentDataPromise
 
-    await createProductsSheet(config.googleSheetIdProducts, newSheetId, currentData.delivery, currentData.deadline,
+    await createProductsSheet(config.googleSheetIdProducts, newSheetId, currentData.deliveryDates, currentData.deadline,
         ['bertrand.larsy@gmail.com', config.googleServiceAccount], currentData)
 
     return sheets.spreadsheets.batchUpdate({
@@ -169,7 +190,7 @@ const fromSheetDate = (num : number): Date => {
     throw new Error (`could not parse date ${dateInSheet.toISOString()}`)
 }
 
-export const createProductsSheet = async (spreadsheetId: string, sheetId: number, delivery: Date, deadline: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
+export const createProductsSheet = async (spreadsheetId: string, sheetId: number, deliveryDates: DeliveryDate[], deadline: Date, adminUsers: string[], initialQuantities?: AvailableProductsSnapshot) => {
     const productSheetsPromise = getAllSheetsOfSpreadsheet(spreadsheetId)
     const productSheetInput = await getProductSheetInput()
     const products = productSheetInput.products
@@ -223,7 +244,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                     values: [colTitles]
                 }, {
                     range: `${targetSheet?.properties?.title}!B1:F1`,
-                    values: [[ 'Date de livraison', toSheetDate(delivery), `semaine ${getWeek(delivery)}`, 'Clôture:', toSheetDate(deadline) ]]
+                    values: [[ 'Date de livraison', toSheet(deliveryDates), '', 'Clôture:', toSheetDate(deadline) ]]
                 }
             ]
         }
@@ -318,7 +339,7 @@ export const createProductsSheet = async (spreadsheetId: string, sheetId: number
                                 horizontalAlignment: 'RIGHT',
                                 textFormat: {
                                     bold: true,
-                                    fontSize: 18
+                                    fontSize: 12
                                 }
                             }
                         },
@@ -791,7 +812,7 @@ export const parseProductSheet = async (spreadsheetId: string, sheetId: number, 
     })
 
     const result = { productQuantities, productQuantitiesPlannedCrops, productQuantitiesInStock,
-        delivery: fromSheetDate(deliveryDate.rowData![0].values![0].userEnteredValue!.numberValue!),
+        deliveryDates: fromSheetDeliveryDates(deliveryDate.rowData![0].values![0].userEnteredValue!.stringValue!),
         deadline: fromSheetDate(deadlineDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
     return result
 }
@@ -844,3 +865,4 @@ const makeProductQuantitiesLine = (initialProductQuantities: (number | string | 
     }
     initialProductQuantities.push(inStock)
 }
+

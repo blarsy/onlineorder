@@ -15,10 +15,10 @@ export default async function handler(
             const orderData = req.body.order as OrderData
             if(!orderData) {
                 res.status(500).json({ error: 'Order data must be present, and must contain order data.' })
-            } else if (!req.body.delivery || isNaN(new Date(req.body.delivery).getTime())) {
-                res.status(500).json({ error: 'Missing or invalid delivery date.' })
+            } else if (!req.body.deadline || isNaN(new Date(req.body.deadline).getTime())) {
+                res.status(500).json({ error: 'Missing or invalid deadline date.' })
             } else {
-                const savedOrder = await saveOrder(orderData, req.body.slug, new Date(req.body.delivery))
+                const savedOrder = await saveOrder(orderData, req.body.slug, new Date(req.body.deadline).toISOString())
                 res.status(200).json(savedOrder)
             }
         } catch(e) {
@@ -41,17 +41,17 @@ export default async function handler(
             handleException(e, res)
         }
     } else if (req.method === 'GET') {
-        if(req.query.delivery && req.query.slug) {
+        if(req.query.deadline && req.query.slug) {
             try {
-                const order = await getOrder(new Date(req.query.delivery as string), req.query.slug as string)
+                const order = await getOrder(new Date(req.query.deadline as string).toISOString(), req.query.slug as string)
                 res.status(200).json(order?.order || null)
             } catch (e) {
                 handleException(e, res)
             }
         } else {
-            if(req.query.delivery) {
+            if(req.query.deadline) {
                 try {
-                    const orderCustomers = await getOrderCustomers(new Date(req.query.delivery as string))
+                    const orderCustomers = await getOrderCustomers(new Date(req.query.deadline as string).toISOString())
                     res.status(200).json(orderCustomers)
                 } catch (e) {
                     handleException(e, res)

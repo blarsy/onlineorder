@@ -3,7 +3,6 @@ import { deliveryPrefsToString, NonLocalProductData, OrderData, ProductData } fr
 import config from '../serverConfig'
 
 const verbose = false
-const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS!) as string[]
 
 export interface OdooProduct {
     name: string,
@@ -98,7 +97,7 @@ const trySearchRead = async (model: string, filter: any, fields: any ): Promise<
 export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCategory> => {
     const outOfCoopCategory = 'Hors Coop'
     const outOfCoopTagIdsPromise = await trySearch(`product.tag`, { name: outOfCoopCategory})
-    const tagIds = await trySearch(`product.tag`, { name: productCategories})
+    const tagIds = await trySearch(`product.tag`, { name: config.odooProductTags})
     const tagsAndIds = await tryRead('product.tag', tagIds, ['name']) as {id: number, name: string}[]
     const categoryId = {} as {[name: string]: number}
     tagsAndIds.forEach(tagId => categoryId[tagId.name] = tagId.id)
@@ -110,7 +109,7 @@ export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCate
     const result = {} as OdooProductsByCategory
 
     const outOfCoopTagIds = await outOfCoopTagIdsPromise
-    productCategories.forEach(cat => {
+    config.odooProductTags.forEach(cat => {
         result[cat] = products
             .filter(product => product.product_tag_ids.includes(categoryId[cat]) && !product.product_tag_ids.includes(outOfCoopTagIds[0]))
             .map<OdooProduct>(product => ({
@@ -135,7 +134,7 @@ export const getProductsForOnlineOrdering = async (): Promise<OdooProductsByCate
 }
 
 export const getLocalProductsByCategories = async (): Promise<OdooProductsByCategory> => {
-    const tagIds = await trySearch(`product.tag`, { name: productCategories})
+    const tagIds = await trySearch(`product.tag`, { name: config.odooProductTags})
     const tagsAndIds = await tryRead('product.tag', tagIds, ['name']) as {id: number, name: string}[]
     const categoryId = {} as {[name: string]: number}
     tagsAndIds.forEach(tagId => categoryId[tagId.name] = tagId.id)
@@ -148,7 +147,7 @@ export const getLocalProductsByCategories = async (): Promise<OdooProductsByCate
 
     const result = {} as OdooProductsByCategory
 
-    productCategories.forEach(cat => {
+    config.odooProductTags.forEach(cat => {
         result[cat] = products 
             .filter(product => product.product_tag_ids.includes(categoryId[cat]))
             .map<OdooProduct>(product => ({

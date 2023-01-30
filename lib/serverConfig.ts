@@ -8,7 +8,7 @@ const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY ? JSON.parse(process.env
 const connectionInfo = process.env.ODOO_CONNECTION_INFO ? JSON.parse(process.env.ODOO_CONNECTION_INFO!).connectionInfo : '' as string
 const volumesFileName = process.env.VOLUMES_FILE_NAME!
 const authorizedSigners = process.env.AUTHORIZED_SIGNERS ? JSON.parse(process.env.AUTHORIZED_SIGNERS) as string[]: []
-
+const odooProductTags = process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS ? JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS) as string[]: []
 interface ServerConfig {
     googleSheetIdProducts: string
     googleSheetIdCustomers: string
@@ -20,11 +20,12 @@ interface ServerConfig {
     connectionInfo: { baseUrl: string, db: string, username: string, password: string }
     volumesFileName: string
     authorizedSigners: string[],
+    odooProductTags: string[]
     [prop: string]: any
 }
 let autoConfig = <ServerConfig> {
     googleSheetIdProducts, googleSheetIdCustomers, googleDocIdOffer, workingFileName, workingFolderName,
-    googleServiceAccount, googlePrivateKey, connectionInfo, volumesFileName, authorizedSigners
+    googleServiceAccount, googlePrivateKey, connectionInfo, volumesFileName, authorizedSigners, odooProductTags
 }
 
 export const setConfig = (data: {[prop: string]:any}): void => {

@@ -1,6 +1,6 @@
 import creds from '../../google-creds.json'
 import config, { setConfig } from '../../lib/serverConfig'
-import { parseProductSheet } from '../../lib/data/productQuantitiesSheet'
+import { fromSheetDeliveryDates, parseProductSheet } from '../../lib/data/productQuantitiesSheet'
 
 jest.setTimeout(20000)
 
@@ -10,15 +10,19 @@ test('Autofill offer doc', async () => {
         connectionInfo: { "baseUrl": "https://coopalimentaire.odoo.com", "db": "coopalimentaire", "username": "legumerie@coopalimentaire.be", "password": "Coopalim@" } ,
         googleSheetIdCustomers: '1GtOR0Hb6lrzUhGguFxEdivKwqm-v3x6LY-tCF0IgblQ',
         googleDocIdOffer: '1PskODuvkAhSIUnNTLSmhGf74LMJ2UhhdX-XblAwGYN8',
-        //googleDocIdOffer: '1QSPKCyr06J6zNk7dMqSgcdO7WlxuuLbLjO7ClvRpT3I',
         workingFileName: 'testdata.json',
         workingFolderName: 'Coop-dev',
         googleSheetIdProducts: '1Ev2npHZcPOJKYg2TKSop3jJNIxudOT-m_yq9fWz5XqE',
-        volumesFileName: 'testvolumes.json'
+        volumesFileName: 'testvolumes.json',
+        odooProductTags: ['a','b','c','d','e','f']
     })
 
-    const res = await parseProductSheet(config.googleSheetIdProducts, 2066779984)
-    console.log(res)
+    const sheetData = 'a, b, c: 123456\nd, e, f: 654321'
+    console.log(fromSheetDeliveryDates(sheetData))
+
+
+    // const res = await parseProductSheet(config.googleSheetIdProducts, 2066779984)
+    // console.log(res)
     //await parseProductSheet(config.googleSheetIdProducts, 2042364649, true)
 
     //await new OdooXmlRpc(config.connectionInfo).connect()

@@ -33,7 +33,7 @@ const OrdersFollowup = ({ connectionData }: Props) => {
             try {
                 setOrdersState({ loading: true, error: '', data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle })
                 const enrichedSalesCycle = await getData()
-                const res = await axios.get(`/api/order?delivery=${enrichedSalesCycle.salesCycle.deliveryDate.toISOString()}`)
+                const res = await axios.get(`/api/order?deadline=${enrichedSalesCycle.salesCycle.deadline.toISOString()}`)
                 setOrdersState({ loading: false, error: '', data: res.data, enrichedSalesCycle })
             } catch(e: any) {
                 setOrdersState({ loading: false, error: extractUiError(e), data: ordersState.data, enrichedSalesCycle: ordersState.enrichedSalesCycle})
