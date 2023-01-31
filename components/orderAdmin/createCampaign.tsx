@@ -19,7 +19,7 @@ import { extractUiError } from '../../lib/form/formCommon'
 import DeliveryForProductCategories from './deliveryForProductCategories'
 import { AnyObject } from 'yup/lib/types'
 
-const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS!) as string[]
+const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS || '[]') as string[]
 interface Props {
     connectionData: ConnectionData,
     onCreated(): void

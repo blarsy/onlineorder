@@ -7,7 +7,7 @@ import { DeliveryTimes, easyDate, getDeliveryTimeLabel } from "../../lib/common"
 import { addWorkingDays } from "../../lib/dateWeek"
 import { DeliveryScheme, Values } from "./createCampaign"
 
-const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS!) as string[]
+const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS || '[]') as string[]
 
 const allDeliveryTimes = [DeliveryTimes.h8, DeliveryTimes.h9, DeliveryTimes.h10, DeliveryTimes.h11, 
     DeliveryTimes.h12, DeliveryTimes.h13, DeliveryTimes.h14, DeliveryTimes.h15, DeliveryTimes.h16]

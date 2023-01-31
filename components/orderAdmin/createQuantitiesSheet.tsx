@@ -30,8 +30,7 @@ interface CreateQuantitiesSheetValues {
     sheetId: string
 }
 
-const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS!) as string[]
-
+const productCategories = JSON.parse(process.env.NEXT_PUBLIC_ODOO_PRODUCT_TAGS || '[]') as string[]
 
 const CreateQuantitiesSheets = ({ connectionData } : Props) => {
     const [createQuantitiesSheet, setCreateQuantitiesSheet] = useState({ working: false, error: ''})
