@@ -29,8 +29,6 @@ export interface DeliveryPrefs {
   [preferredDeliveryTimeId: string]: boolean,
 }
 
-export const makePrefCtrlId = (day: Date, deliveryTime: DeliveryTimes) => `${day.valueOf()}-${deliveryTime.toString()}`
-
 export interface ProductsQuantities {
   [id: string]: number
 }

@@ -14,14 +14,14 @@ interface Props {
 const OrderActions = ({ orderCustomer, connectionData } : Props) => {
     const [status, setStatus] = useState({loading: false, error: ''})
     return <Box display="flex">
-        { !orderCustomer.order.id && <LoadingButton loading={status.loading} variant="outlined" onClick={async () => {
+        { !orderCustomer.order.ids && <LoadingButton loading={status.loading} variant="outlined" onClick={async () => {
             try {
                 setStatus({ loading: true, error: '' })
                 const message = new Date().toUTCString()
                 const signature = await connectionData.signer?.signMessage(message)
 
                 const res = await axios.patch('/api/order', { message, signature, slug: orderCustomer.customer.slug })
-                orderCustomer.order.id = Number(res.data)
+                orderCustomer.order.ids = res.data.orderIds
                 setStatus({ loading: false, error: '' })
             } catch (e: any) {
                 setStatus({ loading: false, error: extractUiError(e) })
@@ -29,7 +29,7 @@ const OrderActions = ({ orderCustomer, connectionData } : Props) => {
             
         }}>Créer</LoadingButton>}
         { status.error && <TaskError error={status.error} />}
-        { orderCustomer.order.id && `Odoo cmd ${orderCustomer.order.id}`}
+        { orderCustomer.order.ids && `Odoo cmd ${orderCustomer.order.ids.join(', ')}`}
     </Box>
 }
 

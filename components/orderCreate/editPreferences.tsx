@@ -7,8 +7,8 @@ import {
     Formik,
   } from 'formik'
 import * as yup from 'yup'
-import { DeliveryTimes, DeliveryTime, OrderData, DeliveryScheme, easyDate, getDeliveryTimeLabel } from "../../lib/common"
-import { makePrefCtrlId, OrderStepProps } from "../../lib/form/formCommon"
+import { easyDate, getDeliveryTimeLabel, OrderDeliveryPreferences } from "../../lib/common"
+import { OrderStepProps } from "../../lib/form/formCommon"
 import Submit from "../form/submit"
 
 const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: OrderStepProps) => {
@@ -24,8 +24,19 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
                         times: yup.array().of(yup.object({
                             deliveryTime: yup.number().required(),
                             checked: yup.boolean()
-                        })).test('AtLeastOneHourSelected','Veuillez choisir au moins une heure de livraison.', val => !!val && val.length > 0 && !!val.find(v => v.checked))
+                        }))
                     }))
+                }).test('AtLeastOneHourSelected','Veuillez choisir au moins une heure de livraison.', val => {
+                    const atLeastOneSelected = (input: any): boolean => {
+                        for(const pref of input.prefs) {
+                            for(const time of pref.times) {
+                                if(time.checked) return true
+                            }
+                        }
+                        return false
+                    }
+                    return !!val && 
+                        atLeastOneSelected(val)
                 })).min(1)
             })}
             onSubmit={async ( values ) => {
@@ -40,24 +51,26 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
             {({ isSubmitting, getFieldProps, errors, touched, values }) => {
                 return <Box component={Form}>
                     <FieldArray name="deliveryTimes" render={arrayHelpers => values.deliveryTimes.map((deliveryTime, dtIdx) => (<Stack key={deliveryTime.deliverySchemeIndex}>
-                            <Typography>{enrichedSalesCycle.salesCycle.deliverySchemes[deliveryTime.deliverySchemeIndex].productCategories.join(', ')}</Typography>
+                            <Typography variant="h6">{enrichedSalesCycle.salesCycle.deliverySchemes[deliveryTime.deliverySchemeIndex].productCategories.join(', ')}</Typography>
                             <Stack>
                                 <FieldArray name="prefs" render={arrayHelpers => {
-                                    return deliveryTime.prefs.map((pref, pIdx) => (<Stack key={pIdx}>
+                                    return <Stack>
+                                        {deliveryTime.prefs.map((pref, pIdx) => (<Stack key={pIdx}>
                                             <Stack direction="row">
-                                            <Box width="4rem">{easyDate(pref.day)}</Box>
-                                            <FieldArray name="times" render={arrayHelpers => {
-                                                return pref.times.map((time, tIdx) => <Box key={tIdx} width="4rem">
-                                                    <FormControlLabel value="top" control={<Checkbox {...getFieldProps(`deliveryTimes[${dtIdx}].prefs[${pIdx}].times[${tIdx}].checked`)} />}
-                                                        checked={time.checked} label={getDeliveryTimeLabel(time.deliveryTime)} 
-                                                        labelPlacement="top" />
-                                                </Box>)
-                                            }}/>
-                                        </Stack>
-                                        <Typography variant="body1" color="error"><ErrorMessage name={`deliveryTimes[${dtIdx}].prefs[${pIdx}].times`} /></Typography>
-                                    </Stack>))
+                                                <Typography variant="body1" width="4rem">{easyDate(pref.day)}</Typography>
+                                                <FieldArray name="times" render={arrayHelpers => {
+                                                    return pref.times.map((time, tIdx) => <Box key={tIdx} width="4rem">
+                                                        <FormControlLabel value="top" control={<Checkbox {...getFieldProps(`deliveryTimes[${dtIdx}].prefs[${pIdx}].times[${tIdx}].checked`)} />}
+                                                            checked={time.checked} label={<Typography variant="body1">{getDeliveryTimeLabel(time.deliveryTime)}</Typography>} 
+                                                            labelPlacement="top" />
+                                                    </Box>)
+                                                }}/>
+                                            </Stack>
+                                        </Stack>))}
+                                    </Stack>
                                 }}/>
                             </Stack>
+                            <Typography variant="body1" color="error"><ErrorMessage name={`deliveryTimes[${dtIdx}]`} /></Typography>
                         </Stack>))
                     }/>
                     <Submit isSubmitting={isSubmitting} disabled={Object.keys(errors).length > 0} label="Etape suivante" submitError={savePrefsError}/>

@@ -73,7 +73,7 @@ const OrdersFollowup = ({ connectionData }: Props) => {
                     <Typography key={`${idx}-6`} textAlign="right" sx={{ flex: '0 0 10%' }} variant="body1">{getOrderTotal(order, ordersState.enrichedSalesCycle!).totalHtva.toFixed(2)}€</Typography>,
                     <Box key={`${idx}-7`} sx={{ flex: '0 0 15%' }} display="flex" justifyContent="flex-end" flexGrow="1"><OrderActions orderCustomer={orderCustomer} connectionData={connectionData}/></Box>]
                 if(expanded && expanded == order.slug) {
-                    orderContent.push(<OrderDetails key={`${idx}-7`} order={order} enrichedSalesCycle={ordersState.enrichedSalesCycle!} />)
+                    orderContent.push(<OrderDetails key={`${idx}-8`} order={order} enrichedSalesCycle={ordersState.enrichedSalesCycle!} />)
                 }
 
                 return orderContent

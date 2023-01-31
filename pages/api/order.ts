@@ -8,7 +8,7 @@ import config from '../../lib/serverConfig'
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<{ error: string} | OrderData | OrderCustomer[] | number | null>
+    res: NextApiResponse<{ error: string} | OrderData | OrderCustomer[] | { orderIds: number[] } | null>
   ) {
     if(req.method === 'PUT') {
         try {
@@ -33,8 +33,8 @@ export default async function handler(
                 if(!config.authorizedSigners.find(authorizedSigner => authorizedSigner === signerAddress)){
                     res.status(500).json({ error: 'Unauthorized' })
                 } else {
-                    const orderId = await createErpOrder(req.body.slug)
-                    res.status(200).json(orderId)
+                    const orderIds = await createErpOrder(req.body.slug)
+                    res.status(200).json({ orderIds })
                 }
             }
         } catch(e) {

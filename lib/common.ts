@@ -49,7 +49,7 @@ export interface OrderDeliveryPreferences {
 }
 
 export interface OrderData {
-    id?: number,
+    ids?: number[],
     slug: string,
     status: OrderStatus,
     quantities: {
@@ -192,8 +192,17 @@ const zeroPad = (num: number, places: number) => String(num).padStart(places, '0
 export const easyDate = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", timeZone: 'Europe/Brussels' })
 export const easyDateTime = (date: Date) => date.toLocaleDateString('fr-BE', { day: "2-digit", weekday: "short", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: 'Europe/Brussels' })
 
+export const orderDeliveryPrefsToString = (salesCycle: SalesCycle, schemes: OrderDeliveryPreferences[]): string => {
+    const lines: string[] = []
+    for(const scheme of schemes) {
+        lines.push(salesCycle.deliverySchemes[scheme.deliverySchemeIndex].productCategories.join(', '))
+        lines.push(deliveryPrefsToString(scheme.prefs))
+    }
+    return lines.join('\n')
+}
+
 export const deliveryPrefsToString = (deliveryTimes: DeliveryTime[]): string => {
-    return `Préférences livraison :\n${deliveryTimes.map(deliveryDay => displayDeliveryDayPrefs(deliveryDay)).join('\n')}`
+    return `${deliveryTimes.map(deliveryDay => displayDeliveryDayPrefs(deliveryDay)).join('\n')}`
 }
 
 export const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {

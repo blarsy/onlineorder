@@ -1,5 +1,6 @@
+import dayjs from 'dayjs'
 import Odoo from 'odoo-await'
-import { deliveryPrefsToString, NonLocalProductData, OrderData, ProductData } from '../common'
+import { OrderData, orderDeliveryPrefsToString, SalesCycle } from '../common'
 import config from '../serverConfig'
 
 const verbose = false
@@ -31,12 +32,18 @@ interface OdooOrderLine {
     price_unit: number
 }
 
+interface ERPCommandInfo { 
+    deliveryDate: Date
+    categories: string[]
+    orderLines: OdooOrderLine[]
+ }
+
 
 let connectionPromise: Promise<any> | undefined
 export const getOdooConnection = async (): Promise<any> => {
     if(!connectionPromise) {
         const connection = new Odoo(config.connectionInfo)
-        connectionPromise = new Promise((resolve, reject) => {
+        connectionPromise = new Promise(resolve => {
             connection.connect().then(() => resolve(connection))
         })
     }
@@ -181,36 +188,68 @@ export const getProducers = async (): Promise<OdooProducersByCategory> => {
     return result
 }
 
-export const createOrder= async(order: OrderData, customerId: number, products: ProductData[], nonLocalProducts: NonLocalProductData[]): Promise<number> => {
-    const productPrices = {} as {[productId: number]: number}
-    products.forEach(product => productPrices[product.id] = product.price)
-
-    const nonLocalProductOrderData = {} as {[productId: number]: {price: number, packaging: number}}
-    nonLocalProducts.forEach(product => nonLocalProductOrderData[product.id] = {
+export const createOrder= async(order: OrderData, customerId: number, salesCycle: SalesCycle): Promise<number[]> => {
+    const { products, nonLocalProducts } = salesCycle
+    const productOrderData = {} as {[productId: number]: {price: number, category: string}}
+    products.forEach(product => productOrderData[product.id] = { 
         price: product.price,
-        packaging: product.packaging
+        category: product.category
     })
 
-    const orderLinesProducts: OdooOrderLine[] = order.quantities.map(quantity => ({ 
-        product_id :quantity.productId,
-        product_uom_qty: quantity.quantity,
-        price_unit: productPrices[quantity.productId]} as OdooOrderLine))
+    const nonLocalProductOrderData = {} as {[productId: number]: {price: number, packaging: number, category: string}}
+    nonLocalProducts.forEach(product => nonLocalProductOrderData[product.id] = {
+        price: product.price,
+        packaging: product.packaging,
+        category: product.category
+    })
 
-    orderLinesProducts.push(...order.quantitiesNonLocal.map(quantity => ({
-        product_id :quantity.productId,
-        product_uom_qty: quantity.quantity * nonLocalProductOrderData[quantity.productId].packaging,
-        price_unit: nonLocalProductOrderData[quantity.productId].price} as OdooOrderLine
-    )))
+    const erpCommandsInfo = order.preferredDeliveryTimes.map(pdt => ({ 
+        deliveryDate: pdt.prefs[0].day,
+        categories: salesCycle.deliverySchemes[pdt.deliverySchemeIndex].productCategories,
+        orderLines: [] as OdooOrderLine[]
+     }))
+
+    let commandsByCategory = {} as {[cat: string]: ERPCommandInfo}
+    const getCommandForProductCategory = (category: string): ERPCommandInfo => {
+        const result = commandsByCategory[category]
+        if(!result) {
+            const targetCommand = erpCommandsInfo.find(comInfo => comInfo.categories.includes(category))
+            if(!targetCommand) throw new Error('No deliveryScheme matched product category ' + category)
+            commandsByCategory[category] = targetCommand
+            return targetCommand
+        }
+        return result
+    }
+
+    order.quantities.forEach(quantity => {
+        getCommandForProductCategory(productOrderData[quantity.productId].category).orderLines.push({ 
+            product_id :quantity.productId,
+            product_uom_qty: quantity.quantity,
+            price_unit: productOrderData[quantity.productId].price
+        })
+    })
+
+    order.quantitiesNonLocal.forEach(quantity => {
+        getCommandForProductCategory(nonLocalProductOrderData[quantity.productId].category).orderLines.push({
+            product_id :quantity.productId,
+            product_uom_qty: quantity.quantity * nonLocalProductOrderData[quantity.productId].packaging,
+            price_unit: nonLocalProductOrderData[quantity.productId].price
+        })
+    })
 
     let note = order.note ? `Note client : ${order.note}\n`: ''
-    note += deliveryPrefsToString(order.preferredDeliveryTimes)
+    note += 'Préférences de livraison:\n' + orderDeliveryPrefsToString(salesCycle, order.preferredDeliveryTimes)
     
-    const orderId = await tryCreate('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
-        note,
-        order_line: {
-            action: 'create',
-            value: orderLinesProducts
-        }})
-
-    return orderId
+    const result: number[] = []
+    for(const command of erpCommandsInfo) {
+        result.push(await tryCreate('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
+            note,
+            order_line: {
+                action: 'create',
+                value: command.orderLines
+            },
+            commitment_date: dayjs(command.deliveryDate).format('YYYY-MM-DD HH:mm')
+        }))
+    }
+    return result
 }

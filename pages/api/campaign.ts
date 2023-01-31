@@ -46,7 +46,6 @@ export default async function handler(
                     if(schemesError) {
                         res.status(500).json({ error: schemesError })
                     } else {
-                        console.log(req.body)
                         queue.enqueue(
                             new Task([new Date(req.body.deadline), req.body.sheetId, req.body.deliverySchemes], 
                             async (args: any[]) => {

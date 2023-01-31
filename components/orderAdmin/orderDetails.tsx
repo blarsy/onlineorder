@@ -64,7 +64,7 @@ const OrderDetails = ({ order, enrichedSalesCycle }: Props) => {
     }
 
     return <Box component={Paper} display="flex" flexDirection="row" flexWrap="wrap" sx={{ flex: '0 0 100%', padding: '1rem' }}>
-        <DeliveryPreferences order={order} />
+        <DeliveryPreferences salesCycle={enrichedSalesCycle.salesCycle} order={order} />
         <Typography sx={{ flex: '0 0 100%'}} variant="body1">Note du client: {order.note}</Typography>
         { orderLinesElements }
     </Box>

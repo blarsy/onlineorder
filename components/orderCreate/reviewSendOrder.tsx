@@ -27,7 +27,7 @@ const ReviewSendOrder = ({ enrichedSalesCycle, customer, prev, save, mutateCusto
         <Typography variant="h5">Passez votre commande en revue</Typography>
         <OrderLinesSummary order={customer.order!} enrichedSalesCycle={enrichedSalesCycle} />
         <OrderSummary totalHtva={totalHtva} />
-        <DeliveryPreferences order={customer.order!} />
+        <DeliveryPreferences salesCycle={enrichedSalesCycle.salesCycle} order={customer.order!} />
         <Formik initialValues={{ note: customer.order!.note }} onSubmit={async (values) => {
             customer.order!.note = values['note']
             customer.order!.status = OrderStatus.confirmed

@@ -105,7 +105,6 @@ const CreateCampaign = ({ connectionData, onCreated } : Props) => {
         onSubmit={async (
             values: Values
         ) => {
-            console.log(values)
             try {
                 const message = new Date().toUTCString()
                 const signature = await connectionData.signer?.signMessage(message)
