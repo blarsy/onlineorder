@@ -43,6 +43,11 @@ export enum DeliveryTimes {
     h16 = 16
 }
 
+export interface OrderDeliveryPreferences {
+    deliverySchemeIndex: number,
+    prefs: DeliveryTime[]
+}
+
 export interface OrderData {
     id?: number,
     slug: string,
@@ -55,7 +60,7 @@ export interface OrderData {
         productId: number,
         quantity: number
     }[],
-    preferredDeliveryTimes: DeliveryTime[],
+    preferredDeliveryTimes: OrderDeliveryPreferences[],
     note: string,
     confirmationDateTime?: Date
 }
@@ -193,7 +198,7 @@ export const deliveryPrefsToString = (deliveryTimes: DeliveryTime[]): string => 
 
 export const orderFromApiCallResult = (orderFromApi: OrderData): OrderData => {
     // dates come as ISO strings from Api, but we want them typed as Dates
-    orderFromApi.preferredDeliveryTimes.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day))
+    orderFromApi.preferredDeliveryTimes.forEach(deliveryScheme => deliveryScheme.prefs.forEach(dayPrefs => dayPrefs.day = new Date(dayPrefs.day)))
     return orderFromApi
 }
   

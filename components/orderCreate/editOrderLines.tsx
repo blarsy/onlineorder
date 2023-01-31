@@ -5,7 +5,7 @@ import {
   } from 'formik'
 import { useState } from "react"
 import * as yup from 'yup'
-import { OrderData } from "../../lib/common"
+import { DeliveryScheme, DeliveryTime, DeliveryTimes, OrderData } from "../../lib/common"
 import { EnrichedSalesCycle } from "../../lib/form/salesCycleCache"
 import { OrderStepProps, ProductsQuantities } from "../../lib/form/formCommon"
 import NonLocalProductsOrderTable from "../orderCreate/nonLocalProductsOrderTable"
@@ -13,10 +13,9 @@ import ProductsOrderTable from "./productsOrderTable"
 import Submit from "../form/submit"
 import OrderSummary from "./orderSummary"
 
-const EditOrderLines = ({ enrichedSalesCycle, customer, next, save, prev }: OrderStepProps) => {
+const EditOrderLines = ({ enrichedSalesCycle, customer, next, save }: OrderStepProps) => {
     const [saveQuantitiesError, setSaveQuantitiesError] = useState('')
     return <Box display="flex" flexDirection="column" alignItems="center">
-            <Button variant="outlined" onClick={prev}>Etape précédente</Button>
             <Formik
                 initialValues={getInitialValues(enrichedSalesCycle, customer.order)}
                 validationSchema={ yup.object(getValidationSchema(enrichedSalesCycle)) }
@@ -47,7 +46,47 @@ const EditOrderLines = ({ enrichedSalesCycle, customer, next, save, prev }: Orde
                                 }
                             }
                         })
-                        const error = await save(customer, enrichedSalesCycle.salesCycle.deliveryDate)
+
+                        // Ensures applicable DeliveryScheme are created (or maintained), and that unapplicable
+                        // DeliverySchemes are removed
+                        const categoriesInOrder = [] as string[] 
+                        order.quantities.forEach(quantity => {
+                            const cat = enrichedSalesCycle.productsById[quantity.productId].product.category
+                            if(!categoriesInOrder.includes(cat)) {
+                                categoriesInOrder.push(cat)
+                            }
+                        })
+                        order.quantitiesNonLocal.forEach(quantity => {
+                            const cat = enrichedSalesCycle.nonLocalProductsById[quantity.productId].category
+                            if(!categoriesInOrder.includes(cat)) {
+                                categoriesInOrder.push(cat)
+                            }
+                        })
+                        const applicableDeliverySchemes = [] as DeliveryScheme[]
+                        categoriesInOrder.forEach(cat => {
+                            enrichedSalesCycle.salesCycle.deliverySchemes.forEach(deliveryScheme => {
+                                if(deliveryScheme.productCategories.includes(cat) && !applicableDeliverySchemes.includes(deliveryScheme)){
+                                    applicableDeliverySchemes.push(deliveryScheme)
+                                }
+                            })
+                        })
+
+                        applicableDeliverySchemes.forEach(scheme => {
+                            // If the delivery scheme is already present on the order, just leave it as it is
+                            if(customer.order?.preferredDeliveryTimes.find(pref => enrichedSalesCycle.salesCycle.deliverySchemes[pref.deliverySchemeIndex] === scheme)) return
+                            
+                            // If not, add it to the order
+                            const index = enrichedSalesCycle.salesCycle.deliverySchemes.findIndex(ds => scheme === ds)
+                            customer.order?.preferredDeliveryTimes.push({
+                                deliverySchemeIndex: index,
+                                prefs: scheme.deliveryTimes.map(dt => ({day: dt.day, times: dt.times.map(t => ({ checked: false, deliveryTime: t }))} as DeliveryTime))
+                            })
+                        })
+
+                        // remove delivery schemes from the order if they are not applicable
+                        customer.order!.preferredDeliveryTimes = customer.order!.preferredDeliveryTimes.filter(pdt => applicableDeliverySchemes.includes(enrichedSalesCycle.salesCycle.deliverySchemes[pdt.deliverySchemeIndex]))
+
+                        const error = await save(customer, enrichedSalesCycle.salesCycle.deadline)
                         if(error) {
                             setSaveQuantitiesError(error)
                         } else {

@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { CustomerData, DeliveryTime, OrderData, OrderStatus,  easyDateTime, orderFromApiCallResult } from '../lib/common'
+import { CustomerData, DeliveryTime, OrderData, OrderStatus,  easyDateTime, orderFromApiCallResult, OrderDeliveryPreferences } from '../lib/common'
 import { EnrichedSalesCycle, getData } from '../lib/form/salesCycleCache'
 import EditOrder from '../components/orderCreate/editOrder'
 import Loader from '../components/form/loader'
@@ -40,15 +40,11 @@ const Order = () => {
                     setSalesCycleState({ loading: false, error: `Ce numéro de client n'existe pas`, enrichedSalesCycle: null, customer: null})
                 } else {
                     try {
-                        const res = await axios.get(`./api/order?delivery=${enrichedSalesCycle.salesCycle.deliveryDate.toISOString()}&slug=${slug}`)
+                        const res = await axios.get(`./api/order?deadline=${enrichedSalesCycle.salesCycle.deadline.toISOString()}&slug=${slug}`)
                         if(res.data) {
                             customer.order = orderFromApiCallResult(res.data)
                         } else {
-                            const deliveryTimes = enrichedSalesCycle.salesCycle.availableDeliveryTimes.map(adt => ({
-                                day: adt.day, 
-                                times: adt.times.map(time => ({deliveryTime: time, checked: false}) )
-                            } as DeliveryTime))
-                            customer.order = createOrderWithDefaults(deliveryTimes, customer.slug)
+                            customer.order = createOrderWithDefaults([], customer.slug)
                         }
                         setSalesCycleState({ loading: false, error: '', enrichedSalesCycle, customer })
                     } catch (e : any) {
@@ -102,11 +98,11 @@ const Order = () => {
 
 export default Order
 
-function createOrderWithDefaults(deliveryTimes: DeliveryTime[], slug: string): OrderData {
+function createOrderWithDefaults(preferredDeliveryTimes: OrderDeliveryPreferences[], slug: string): OrderData {
     return {
         slug,
         status: OrderStatus.draft,
-        preferredDeliveryTimes: deliveryTimes,
+        preferredDeliveryTimes,
         quantities: [],
         quantitiesNonLocal: [],
         note: ''

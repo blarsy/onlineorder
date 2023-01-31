@@ -26,11 +26,11 @@ const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer, refreshQuantit
         await refreshQuantities()
     }
 
-    const saveOrder = async ( customer: CustomerData, delivery: Date) : Promise<string> => {
+    const saveOrder = async ( customer: CustomerData, deadline: Date) : Promise<string> => {
         try {
             const res = await axios.put('/api/order', {
                 slug: customer.slug,
-                delivery,
+                deadline,
                 order: customer.order
             })
             // The server might have updated the order status (indicating that the order was confirmed too late)
@@ -43,9 +43,9 @@ const EditOrder = ({customer, enrichedSalesCycle, mutateCustomer, refreshQuantit
     }
 
     return <Stack alignItems="center" direction="column" justifyContent="flex-begin">
-        { step === 0 && <EditPreferences enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next} />}
-        { step === 1 && <EditOrderLines enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next}  prev={prevWithQuantitiesRefresh}/>}
-        { step === 2 && <ReviewSendOrder enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} prev={prev} mutateCustomer={mutateCustomer} />}
+        { step === 0 && <EditOrderLines enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next}/>}
+        { step === 1 && <EditPreferences enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} next={next} prev={prevWithQuantitiesRefresh}/>}
+        { step === 2 && <ReviewSendOrder enrichedSalesCycle={enrichedSalesCycle} customer={customer} save={saveOrder} mutateCustomer={mutateCustomer} prev={prev}/>}
     </Stack>
 }
 

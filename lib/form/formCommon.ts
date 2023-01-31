@@ -22,7 +22,7 @@ setLocale({
     next?: () => void,
     prev?: () => void,
     mutateCustomer?: (customer: CustomerData) => void,
-    save: ( customer: CustomerData, delivery: Date) => Promise<string>
+    save: ( customer: CustomerData, deadline: Date) => Promise<string>
 }
 
 export interface DeliveryPrefs {
