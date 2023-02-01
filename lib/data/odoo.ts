@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import Odoo from 'odoo-await'
-import { OrderData, orderDeliveryPrefsToString, SalesCycle } from '../common'
+import { deliveryPrefsToString, OrderData, SalesCycle } from '../common'
 import config from '../serverConfig'
 
 const verbose = false
@@ -204,6 +204,7 @@ export const createOrder= async(order: OrderData, customerId: number, salesCycle
     })
 
     const erpCommandsInfo = order.preferredDeliveryTimes.map(pdt => ({ 
+        deliveryScheme: pdt,
         deliveryDate: pdt.prefs[0].day,
         categories: salesCycle.deliverySchemes[pdt.deliverySchemeIndex].productCategories,
         orderLines: [] as OdooOrderLine[]
@@ -238,12 +239,11 @@ export const createOrder= async(order: OrderData, customerId: number, salesCycle
     })
 
     let note = order.note ? `Note client : ${order.note}\n`: ''
-    note += 'Préférences de livraison:\n' + orderDeliveryPrefsToString(salesCycle, order.preferredDeliveryTimes)
     
     const result: number[] = []
     for(const command of erpCommandsInfo) {
         result.push(await tryCreate('sale.order', {partner_id: customerId, state: 'sale', payment_term_id: 2, 
-            note,
+            note: note + 'Préférences de livraison:\n' + deliveryPrefsToString(command.deliveryScheme.prefs),
             order_line: {
                 action: 'create',
                 value: command.orderLines
