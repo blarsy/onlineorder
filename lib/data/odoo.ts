@@ -88,11 +88,11 @@ const trySearch = async (model: string, filter: any): Promise<Array<any>> => {
         throw e
     }
 }
-const trySearchRead = async (model: string, filter: any, fields: any ): Promise<Array<any>> => {
+const trySearchRead = async (model: string, filter: any, fields: any, options?: any ): Promise<Array<any>> => {
     if(verbose) console.log('searchRead', model, filter, fields)
     try {
         const conn = await getOdooConnection()
-        const result = await conn.searchRead(model, filter, fields)
+        const result = await conn.searchRead(model, filter, fields, options)
         if(verbose) console.log('result', result)
         return result
     } catch (e) {
@@ -150,7 +150,9 @@ export const getLocalProductsByCategories = async (): Promise<OdooProductsByCate
 
     const products = await trySearchRead('product.product', 
         ['&', ['product_tag_ids', 'in', tagIds], ['product_tag_ids', 'not in', excludedTagIds]],
-        ['name', 'product_tag_ids', 'standard_price', 'list_price', 'uom_id']) as Array<any>
+        ['name', 'product_tag_ids', 'standard_price', 'list_price', 'uom_id'],
+        { order: 'name'}
+        ) as Array<any>
 
     const result = {} as OdooProductsByCategory
 
@@ -165,7 +167,7 @@ export const getLocalProductsByCategories = async (): Promise<OdooProductsByCate
                 unit: product.uom_id[1]
             }))
     })
-
+    console.log(result)
     return result
 }
 

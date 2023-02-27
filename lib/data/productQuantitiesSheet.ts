@@ -174,7 +174,7 @@ const toSheetDate = (date : Date): number => {
     // Cheap trick: Google sheet does not handle time zones for date
     // Convert to belgian timezone, parse it again to an UTC that includes the timezone offset
     const local = date.toLocaleDateString('fr-BE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Brussels' })
-    const [, day, month, year, hour, minute, second] = /(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})/.exec(local)!
+    const [, day, month, year, hour, minute, second] = /(\d{2})\/(\d{2})\/(\d{4}),? (\d{2}):(\d{2}):(\d{2})/.exec(local)!
     const fakedUtcDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`)
     return (fakedUtcDate.getTime() - refDate) / millisecondsInADay
 }
