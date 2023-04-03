@@ -167,7 +167,6 @@ export const getLocalProductsByCategories = async (): Promise<OdooProductsByCate
                 unit: product.uom_id[1]
             }))
     })
-    console.log(result)
     return result
 }
 

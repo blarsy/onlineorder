@@ -17,7 +17,8 @@ test('Create blank sheet', async () => {
         odooProductTags: ["Légume", "Aromatique", "Fruit", "Produit laitier", "4e gamme"]
     })
 
-    await createBlankQuantitiesSheet([{date: new Date("2023-03-02T11:00:00.000Z"), productCategories: ["Légume", "Aromatique", "Fruit"]}], new Date("2023-02-28T10:00:00.000Z"), 890980829)
+    const result = await parseProductSheet('1WQKBFLJVeqXWOOuOZ01MVEaEvlxvirCTYqquDfRwWB4', 808065601)
+    console.log(result)
 })
 
 // test('Autofill offer doc', async () => {

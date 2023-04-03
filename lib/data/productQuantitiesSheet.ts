@@ -810,9 +810,9 @@ export const parseProductSheet = async (spreadsheetId: string, sheetId: number, 
             }
         })
     })
-
+    
     const result = { productQuantities, productQuantitiesPlannedCrops, productQuantitiesInStock,
-        deliveryDates: fromSheetDeliveryDates(deliveryDate.rowData![0].values![0].userEnteredValue!.stringValue!),
+        deliveryDates: fromSheetDeliveryDates(deliveryDate.rowData![0].values![0].userEnteredValue ? deliveryDate.rowData![0].values![0].userEnteredValue!.stringValue! : ''),
         deadline: fromSheetDate(deadlineDate.rowData![0].values![0].userEnteredValue!.numberValue!)}
     return result
 }
