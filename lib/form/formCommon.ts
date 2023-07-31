@@ -36,7 +36,7 @@ export interface ProductsQuantities {
 export const getOrderTotal = (order: OrderData, enrichedSalesCycle: EnrichedSalesCycle):{ totalHtva: number, tva: number } => {
   const totalProductsHtva = order.quantities.reduce<number>((acc, quantity) => {
       const productInfo = enrichedSalesCycle.productsById[quantity.productId] 
-      return acc += productInfo.product.price * Number(quantity.quantity)
+      return acc += productInfo ? productInfo.product.price * Number(quantity.quantity): 0
   }, 0)
   const totalNonLocalProductsHtva  = order.quantitiesNonLocal.reduce<number>((acc, quantity) => {
       const product = enrichedSalesCycle.nonLocalProductsById[quantity.productId] 
