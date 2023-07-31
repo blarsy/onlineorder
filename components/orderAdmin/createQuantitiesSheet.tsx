@@ -99,7 +99,7 @@ const CreateQuantitiesSheets = ({ connectionData } : Props) => {
                 />
                 <Typography variant="body1" color="error"><ErrorMessage name="deadline" /></Typography>
                 <Typography variant="h6">Dates de livraisons prévues</Typography>
-                <FieldArray name="deliveryDates" render={arrayHelpers => (<Stack spacing={1} padding="0 1rem">
+                <FieldArray name="deliveryDates" render={(arrayHelpers: FieldArrayRenderProps) => (<Stack spacing={1} padding="0 1rem">
                     {values.deliveryDates.map((deliveryDate, idx) => <Stack key={idx} component={Paper} elevation={3} padding="0.5rem">
                         <Stack alignItems="center" direction="row" justifyContent="space-between">
                             <InputLabel>Catégories de produits vendues</InputLabel>

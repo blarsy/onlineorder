@@ -50,7 +50,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
             }}>
             {({ isSubmitting, getFieldProps, errors, touched, values }) => {
                 return <Box component={Form}>
-                    <FieldArray name="deliveryTimes" render={arrayHelpers => values.deliveryTimes.map((deliveryTime, dtIdx) => (<Stack key={deliveryTime.deliverySchemeIndex}>
+                    <FieldArray name="deliveryTimes" render={(arrayHelpers: FieldArrayRenderProps) => values.deliveryTimes.map((deliveryTime, dtIdx) => (<Stack key={deliveryTime.deliverySchemeIndex}>
                             <Typography variant="h6">{enrichedSalesCycle.salesCycle.deliverySchemes[deliveryTime.deliverySchemeIndex].productCategories.join(', ')}</Typography>
                             <Stack>
                                 <FieldArray name="prefs" render={arrayHelpers => {
