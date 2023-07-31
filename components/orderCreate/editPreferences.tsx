@@ -59,7 +59,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
                                         {deliveryTime.prefs.map((pref, pIdx) => (<Stack key={pIdx}>
                                             <Stack direction="row">
                                                 <Typography variant="body1" width="4rem">{easyDate(pref.day)}</Typography>
-                                                <FieldArray name="times" render={arrayHelpers => {
+                                                <FieldArray name="times" render={(arrayHelpers: FieldArrayRenderProps) => {
                                                     return pref.times.map((time, tIdx) => <Box key={tIdx} width="4rem">
                                                         <FormControlLabel value="top" control={<Checkbox {...getFieldProps(`deliveryTimes[${dtIdx}].prefs[${pIdx}].times[${tIdx}].checked`)} />}
                                                             checked={time.checked} label={<Typography variant="body1">{getDeliveryTimeLabel(time.deliveryTime)}</Typography>} 
