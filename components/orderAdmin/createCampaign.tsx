@@ -9,6 +9,7 @@ import {
     FieldArray,
     validateYupSchema,
     yupToFormErrors,
+    FieldArrayRenderProps,
   } from 'formik'
 import * as yup from 'yup'
 import { addWorkingDays, findNextWeekdayTime } from '../../lib/dateWeek'
@@ -136,7 +137,7 @@ const CreateCampaign = ({ connectionData, onCreated } : Props) => {
                 { errors.deadline && touched.deadline && <Typography variant="body1" color="error">{errors.deadline as string}</Typography>}
                 <Typography variant="h6">Livraison des produits par catégorie</Typography>
                 <FieldArray name="deliverySchemes"
-                    render={arrayHelpers => <Stack spacing={2} padding="0 1rem">
+                    render={(arrayHelpers: FieldArrayRenderProps) => <Stack spacing={2} padding="0 1rem">
                         {values.deliverySchemes.map((deliveryScheme, idx) => <DeliveryForProductCategories
                         canRemove={idx !== 0} key={idx} availableCategories={availableCategories} fieldName={`deliverySchemes[${idx}]`} value={deliveryScheme} 
                         setFieldValue={setFieldValue} onRemove={() => arrayHelpers.remove(idx)}/>)}
