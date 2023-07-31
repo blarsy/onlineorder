@@ -54,7 +54,7 @@ const EditPreferences = ({ enrichedSalesCycle, customer, next, prev, save }: Ord
                     <FieldArray name="deliveryTimes" render={(arrayHelpers: FieldArrayRenderProps) => values.deliveryTimes.map((deliveryTime, dtIdx) => (<Stack key={deliveryTime.deliverySchemeIndex}>
                             <Typography variant="h6">{enrichedSalesCycle.salesCycle.deliverySchemes[deliveryTime.deliverySchemeIndex].productCategories.join(', ')}</Typography>
                             <Stack>
-                                <FieldArray name="prefs" render={arrayHelpers => {
+                                <FieldArray name="prefs" render={(arrayHelpers: FieldArrayRenderProps) => {
                                     return <Stack>
                                         {deliveryTime.prefs.map((pref, pIdx) => (<Stack key={pIdx}>
                                             <Stack direction="row">
